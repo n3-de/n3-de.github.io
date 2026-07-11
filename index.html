@@ -4,37 +4,38 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🎮 Archive</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <header class="header">
-        <a href="/" class="logo">🎮 Archive</a>
+        <a href="/" class="logo">Archive</a>
         <div class="header-actions">
             <button class="icon-btn" onclick="openSearch()" title="Поиск">🔍</button>
             <button class="icon-btn" id="themeToggle" title="Сменить тему">🌙</button>
             <button class="icon-btn" onclick="openNewPost()" title="Новый пост">✚</button>
         </div>
     </header>
-
-    <nav class="tabs">
-        <div class="tab active" data-tab="popular">🔥 Популярное</div>
-        <div class="tab" data-tab="new">🆕 Новое</div>
-        <div class="tab" data-tab="my">👤 Мои посты</div>
-        <div class="tab" data-tab="date">📅 По дате</div>
+    <nav class="tabs" id="tabs">
+        <div class="tab active" data-tab="popular">Популярное</div>
+        <div class="tab" data-tab="new">Новое</div>
+        <div class="tab" data-tab="my">Мои посты</div>
+        <div class="tab" data-tab="date">По дате</div>
+        <div class="tab-indicator" id="tabIndicator"></div>
     </nav>
-
     <main id="feed"></main>
-
     <div class="modal-overlay" id="newPostModal">
         <div class="modal">
             <h2 id="modalTitle">✚ Новый пост</h2>
             <input type="hidden" id="editPostId">
-            <label>👤 Твой ник</label>
+            <label>Твой ник</label>
             <input type="text" id="newPostAuthor" placeholder="Придумай себе ник" maxlength="30">
-            <label>📝 Текст поста</label>
+            <label>Текст поста</label>
             <textarea id="newPostText" placeholder="Напиши что-нибудь..."></textarea>
-            
-            <label>🖼️ Скриншоты</label>
+
+            <label>Скриншоты</label>
             <div class="file-upload-area">
                 <input type="file" id="fileInput" accept="image/*,video/*" multiple style="display:none;">
                 <button class="btn btn-cancel" onclick="document.getElementById('fileInput').click()" style="width:100%;">
@@ -42,27 +43,23 @@
                 </button>
                 <div class="preview-grid" id="previewGrid"></div>
             </div>
-
-            <label>#️⃣ Теги (через пробел)</label>
+            <label>Теги (через пробел)</label>
             <input type="text" id="newPostTags" placeholder="игры 2024 скриншот" maxlength="100">
-            <label>📌 Закрепить пост</label>
-            <input type="checkbox" id="newPostPinned" style="width:auto;margin-bottom:15px;">
+            <label class="checkbox-label"><input type="checkbox" id="newPostPinned"> Закрепить пост</label>
             <div class="btn-row">
                 <button class="btn btn-cancel" onclick="closeNewPost()">Отмена</button>
                 <button class="btn btn-primary" id="publishBtn" onclick="publishPost()">📤 Опубликовать</button>
             </div>
         </div>
     </div>
-
     <div class="search-modal" id="searchModal">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:15px;">
             <button class="icon-btn" onclick="closeSearch()">← Назад</button>
-            <span style="font-weight:600;">🔍 Поиск</span>
+            <span style="font-weight:600;">Поиск</span>
         </div>
         <input type="text" id="searchInput" placeholder="Поиск по тексту, тегам, автору..." oninput="doSearch()">
         <div class="search-results" id="searchResults">Начни вводить запрос...</div>
     </div>
-
     <div class="profile-modal" id="profileModal">
         <div style="margin-bottom:15px;">
             <button class="icon-btn" onclick="closeProfile()">← Назад</button>
@@ -70,7 +67,6 @@
         <div class="profile-header" id="profileHeader"></div>
         <div class="profile-posts" id="profilePosts"></div>
     </div>
-
     <script src="app.js"></script>
 </body>
 </html>
