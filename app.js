@@ -129,7 +129,7 @@ function createPostElement(post) {
     }
 
     const tagsHTML = post.tags.map(t => `<span class="tag" onclick="searchTag('${t.replace(/'/g, "\\'")}')">${escapeHtml(t)}</span>`).join('');
-    const commentsHTML = (post.comments || []).map((c, i) => `<div class="comment"><strong>${escapeHtml(c.author)}</strong> ${escapeHtml(c.text)}<span style="color:var(--text3);font-size:11px;margin-left:8px;">${timeAgo(c.timestamp)}</span></div>`).join('');
+    const commentsHTML = (post.comments || []).map((c) => `<div class="comment"><strong>${escapeHtml(c.author)}</strong> ${escapeHtml(c.text)}<span style="color:var(--text3);font-size:11px;margin-left:8px;">${timeAgo(c.timestamp)}</span></div>`).join('');
     const isMyPost = post.author === (localStorage.getItem('archive-mynick') || '');
     const avatarLetter = getAvatar(post.author);
     const avatarColor = getAvatarColor(post.author);
@@ -335,35 +335,6 @@ function openProfile(author) {
     modal.classList.add('open');
 }
 function closeProfile() { document.getElementById('profileModal').classList.remove('open'); }
-
-function exportData() {
-    const data = JSON.stringify(posts, null, 2);
-    const blob = new Blob([data], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = 'archive-backup.json'; a.click();
-    URL.revokeObjectURL(url);
-}
-
-function importData(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        try {
-            const imported = JSON.parse(e.target.result);
-            if (Array.isArray(imported)) {
-                if (confirm(`Загружено ${imported.length} постов. OK - добавить, Отмена - заменить`)) {
-                    const existingIds = new Set(posts.map(p => p.id));
-                    posts = [...posts, ...imported.filter(p => !existingIds.has(p.id))];
-                } else { posts = imported; }
-                nextId = Math.max(...posts.map(p => p.id), 0) + 1;
-                savePosts(); renderFeed(); alert('✅ Готово!');
-            }
-        } catch(err) { alert('❌ Ошибка: неверный формат файла'); }
-    };
-    reader.readAsText(file);
-    event.target.value = '';
-}
 
 function escapeHtml(text) {
     const div = document.createElement('div');
