@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎮 Kogama Archive</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="header">
+        <a href="/" class="logo">🎮 Kogama Archive</a>
+        <div class="header-actions">
+            <button class="icon-btn" onclick="openSearch()" title="Поиск">🔍</button>
+            <button class="icon-btn" id="themeToggle" title="Сменить тему">🌙</button>
+            <button class="icon-btn" onclick="openNewPost()" title="Новый пост">✚</button>
+        </div>
+    </header>
+
+    <nav class="tabs">
+        <div class="tab active" data-tab="popular">🔥 Популярное</div>
+        <div class="tab" data-tab="new">🆕 Новое</div>
+        <div class="tab" data-tab="my">👤 Мои посты</div>
+    </nav>
+
+    <main id="feed"></main>
+    <button class="load-more" id="loadMore" style="display:none;">Загрузить ещё...</button>
+
+    <div class="modal-overlay" id="newPostModal">
+        <div class="modal">
+            <h2>✚ Новый пост</h2>
+            <label>👤 Твой ник</label>
+            <input type="text" id="newPostAuthor" placeholder="Введи свой ник" maxlength="30">
+            <label>📝 О чём хочешь рассказать?</label>
+            <textarea id="newPostText" placeholder="Напиши свою историю, момент, баг..."></textarea>
+            
+            <label>🖼️ Скриншоты</label>
+            <div class="file-upload-area" id="fileUploadArea">
+                <input type="file" id="fileInput" accept="image/*,video/*" multiple style="display:none;">
+                <button class="btn btn-cancel" onclick="document.getElementById('fileInput').click()" style="width:100%;">
+                    📁 Выбрать файлы с устройства
+                </button>
+                <div class="preview-grid" id="previewGrid"></div>
+            </div>
+
+            <label>#️⃣ Теги (через пробел)</label>
+            <input type="text" id="newPostTags" placeholder="дракон 2016 мойпервый баг" maxlength="100">
+            <div class="btn-row">
+                <button class="btn btn-cancel" onclick="closeNewPost()">Отмена</button>
+                <button class="btn btn-primary" onclick="publishPost()">📤 Опубликовать</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="search-modal" id="searchModal">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:15px;">
+            <button class="icon-btn" onclick="closeSearch()">← Назад</button>
+            <span style="font-weight:600;">🔍 Поиск</span>
+        </div>
+        <input type="text" id="searchInput" placeholder="Поиск по тексту, тегам, автору..." oninput="doSearch()">
+        <div class="search-results" id="searchResults">Начни вводить запрос...</div>
+    </div>
+
+    <div class="profile-modal" id="profileModal">
+        <div style="margin-bottom:15px;">
+            <button class="icon-btn" onclick="closeProfile()">← Назад</button>
+        </div>
+        <div class="profile-header" id="profileHeader"></div>
+        <div class="profile-posts" id="profilePosts"></div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
