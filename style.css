@@ -6,9 +6,9 @@
     --bg: #0c0d11;
     --card-bg: #15161c;
     --card-bg-2: #1b1c24;
-    --accent: #ffb238;      /* catalog amber — stamps, numbers, links */
+    --accent: #ffb238;
     --accent-dim: #8a6425;
-    --accent2: #5ec8ff;     /* author / secondary */
+    --accent2: #5ec8ff;
     --text: #e9e7e2;
     --text2: #97979f;
     --text3: #5c5d66;
@@ -196,7 +196,6 @@ main#feed { padding: 4px 0 40px; }
     gap: 4px;
 }
 
-/* catalog number — the signature element */
 .catalog-no {
     position: absolute;
     top: 14px;
@@ -718,6 +717,94 @@ main#feed { padding: 4px 0 40px; }
 .profile-post .text { font-family: var(--font-serif); font-size: 14px; margin-top: 5px; }
 .profile-post .meta { color: var(--text3); font-family: var(--font-mono); font-size: 11px; margin-top: 6px; }
 
+/* ---------- scroll-to-top ---------- */
+.scroll-top {
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    color: var(--text2);
+    font-size: 18px;
+    cursor: pointer;
+    z-index: 150;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transform: translateY(12px);
+    pointer-events: none;
+    transition: opacity var(--dur-m) var(--ease), transform var(--dur-m) var(--ease), border-color var(--dur-s) var(--ease), color var(--dur-s) var(--ease);
+}
+
+.scroll-top.visible {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.scroll-top:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.scroll-top:active { transform: scale(0.9); }
+
+/* ---------- toast ---------- */
+.toast {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-120px);
+    background: var(--card-bg-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 12px 22px;
+    border-radius: 10px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    z-index: 400;
+    pointer-events: none;
+    opacity: 0;
+    transition: transform var(--dur-m) var(--ease), opacity var(--dur-m) var(--ease);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+
+.toast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+}
+
+/* ---------- new-posts badge ---------- */
+.new-badge {
+    position: absolute;
+    top: 6px;
+    right: -4px;
+    background: var(--accent);
+    color: #0c0d11;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    pointer-events: none;
+    animation: badgeIn var(--dur-m) var(--ease) both;
+}
+
+@keyframes badgeIn {
+    from { transform: scale(0); }
+    to   { transform: scale(1); }
+}
+
 /* ---------- light theme ---------- */
 
 body.light {
@@ -745,4 +832,5 @@ body.light ::selection { color: #fff; }
     .post { margin: 10px 10px; }
     .gallery-slide img, .gallery-slide video { max-height: 320px; }
     .tab { font-size: 9.5px; padding: 12px 4px; }
+    .scroll-top { bottom: 20px; right: 20px; width: 40px; height: 40px; font-size: 16px; }
 }
