@@ -42,10 +42,6 @@ body {
     background: var(--bg);
     color: var(--text);
     min-height: 100vh;
-    max-width: 680px;
-    margin: 0 auto;
-    border-left: 1px solid var(--border-soft);
-    border-right: 1px solid var(--border-soft);
 }
 
 ::selection { background: var(--accent); color: #14140f; }
@@ -116,10 +112,10 @@ body {
     display: flex;
     border-bottom: 1px solid var(--border);
     background: var(--bg);
-    position: relative;
     position: sticky;
     top: 57px;
     z-index: 99;
+    position: relative;
 }
 
 .tab {
@@ -150,19 +146,47 @@ body {
     box-shadow: 0 0 6px var(--accent);
 }
 
-/* ---------- feed / post card ---------- */
+/* ---------- grid ---------- */
 
-main#feed { padding: 4px 0 40px; }
+main#feed {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+    padding: 14px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+@media (min-width: 700px) {
+    main#feed {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 1100px) {
+    main#feed {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* ---------- post card ---------- */
 
 .post {
     background: var(--card-bg);
-    margin: 14px 16px;
     border-radius: 10px;
     overflow: hidden;
     border: 1px solid var(--border-soft);
     position: relative;
     animation: postIn var(--dur-l) var(--ease) both;
-    transition: border-color var(--dur-m) var(--ease);
+    transition: border-color var(--dur-m) var(--ease), transform var(--dur-m) var(--ease);
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.post:hover {
+    border-color: var(--border);
+    transform: translateY(-1px);
 }
 
 @keyframes postIn {
@@ -180,6 +204,7 @@ main#feed { padding: 4px 0 40px; }
     left: 0; top: 0; bottom: 0;
     width: 3px;
     background: var(--accent);
+    z-index: 1;
 }
 
 .pin-badge {
@@ -194,6 +219,7 @@ main#feed { padding: 4px 0 40px; }
     display: flex;
     align-items: center;
     gap: 4px;
+    z-index: 2;
 }
 
 .catalog-no {
@@ -204,6 +230,7 @@ main#feed { padding: 4px 0 40px; }
     font-size: 10px;
     letter-spacing: 0.06em;
     color: var(--text3);
+    z-index: 2;
 }
 
 .post.pinned .catalog-no { display: none; }
@@ -312,6 +339,7 @@ main#feed { padding: 4px 0 40px; }
     font-size: 15.5px;
     line-height: 1.6;
     word-wrap: break-word;
+    flex: 1;
 }
 
 .post-tags {
@@ -345,6 +373,7 @@ main#feed { padding: 4px 0 40px; }
     color: var(--text2);
     flex-wrap: wrap;
     align-items: center;
+    margin-top: auto;
 }
 
 .action-btn {
@@ -450,6 +479,7 @@ main#feed { padding: 4px 0 40px; }
     padding: 90px 20px;
     color: var(--text2);
     animation: fadeIn var(--dur-l) var(--ease) both;
+    grid-column: 1 / -1;
 }
 
 .empty-state .emoji { font-size: 40px; margin-bottom: 18px; opacity: 0.7; }
@@ -826,10 +856,9 @@ body.light ::selection { color: #fff; }
 /* ---------- responsive ---------- */
 
 @media (max-width: 600px) {
-    body { border: none; }
     .header { padding: 12px 14px; }
     .tabs { top: 53px; }
-    .post { margin: 10px 10px; }
+    .post { margin: 0; }
     .gallery-slide img, .gallery-slide video { max-height: 320px; }
     .tab { font-size: 9.5px; padding: 12px 4px; }
     .scroll-top { bottom: 20px; right: 20px; width: 40px; height: 40px; font-size: 16px; }
