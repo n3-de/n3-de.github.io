@@ -22,14 +22,26 @@ themeToggle.addEventListener('click', () => {
     localStorage.setItem('archive-theme', isLight ? 'light' : 'dark');
 });
 
-// Табы
+// Табы + скользящий индикатор
 document.querySelectorAll('.tab').forEach(tab => {
     tab.addEventListener('click', () => {
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
         tab.classList.add('active');
         currentTab = tab.dataset.tab;
+        moveTabIndicator(tab);
         renderFeed();
     });
+});
+
+function moveTabIndicator(tabEl) {
+    const indicator = document.getElementById('tabIndicator');
+    if (!indicator || !tabEl) return;
+    indicator.style.left = tabEl.offsetLeft + 'px';
+    indicator.style.width = tabEl.offsetWidth + 'px';
+}
+
+window.addEventListener('resize', () => {
+    moveTabIndicator(document.querySelector('.tab.active'));
 });
 
 // Загрузка файлов
@@ -69,7 +81,7 @@ function getAvatarColor(author) {
         hash = author.charCodeAt(i) + ((hash << 5) - hash);
     }
     const hue = Math.abs(hash % 360);
-    return `hsl(${hue}, 60%, 50%)`;
+    return `hsl(${hue}, 55%, 48%)`;
 }
 
 // Время
@@ -85,6 +97,10 @@ function timeAgo(timestamp) {
     else if (hours > 0) return `${hours} ч. назад`;
     else if (minutes > 0) return `${minutes} мин. назад`;
     else return 'Только что';
+}
+
+function catalogNumber(id) {
+    return '№ ' + String(id).padStart(4, '0');
 }
 
 // Посты
@@ -109,7 +125,12 @@ function renderFeed() {
         return;
     }
     feed.innerHTML = '';
-    filtered.forEach(post => feed.appendChild(createPostElement(post)));
+    filtered.forEach((post, i) => {
+        const el = createPostElement(post);
+        // staggered reveal, capped so a long feed doesn't take forever to finish animating
+        el.style.animationDelay = (Math.min(i, 8) * 45) + 'ms';
+        feed.appendChild(el);
+    });
     document.querySelectorAll('.gallery-slides').forEach(initGallery);
 }
 
@@ -135,7 +156,7 @@ function createPostElement(post) {
     const avatarColor = getAvatarColor(post.author);
 
     div.innerHTML = `
-        ${post.pinned ? '<div class="pin-badge">📌</div>' : ''}
+        ${post.pinned ? '<div class="pin-badge">📌 Закреп.</div>' : `<div class="catalog-no">${catalogNumber(post.id)}</div>`}
         <div class="post-header">
             <div class="post-avatar" style="background:${avatarColor};">${avatarLetter}</div>
             <div>
@@ -148,7 +169,7 @@ function createPostElement(post) {
         <div class="post-text">${escapeHtml(post.text)}</div>
         <div class="post-tags">${tagsHTML}</div>
         <div class="post-actions">
-            <button class="action-btn ${post.liked ? 'liked' : ''}" onclick="toggleLike(${post.id})">❤️ <span>${post.likes}</span></button>
+            <button class="action-btn ${post.liked ? 'liked' : ''}" onclick="toggleLike(${post.id})"><span class="heart-glyph">❤️</span> <span>${post.likes}</span></button>
             <button class="action-btn" onclick="toggleComments(${post.id})">💬 ${(post.comments || []).length}</button>
             <span class="action-btn" onclick="sharePost(${post.id})">🔗</span>
             ${isMyPost ? `<button class="action-btn" onclick="editPost(${post.id})">✏️</button>` : ''}
@@ -229,6 +250,12 @@ function toggleLike(postId) {
     if (btn) {
         btn.classList.toggle('liked', post.liked);
         btn.querySelector('span').textContent = post.likes;
+        if (post.liked) {
+            const glyph = btn.querySelector('.heart-glyph');
+            glyph.style.animation = 'none';
+            void glyph.offsetWidth; // restart the pulse animation
+            glyph.style.animation = '';
+        }
     }
 }
 
@@ -297,7 +324,9 @@ function publishPost() {
     renderPreviews();
     currentTab = 'new';
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.querySelector('.tab[data-tab="new"]').classList.add('active');
+    const newTab = document.querySelector('.tab[data-tab="new"]');
+    newTab.classList.add('active');
+    moveTabIndicator(newTab);
     renderFeed();
 }
 
@@ -344,3 +373,4 @@ function escapeHtml(text) {
 
 initTheme();
 renderFeed();
+moveTabIndicator(document.querySelector('.tab.active'));
