@@ -3,16 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🎮 Kogama Archive</title>
+    <title>🎮 Archive</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <header class="header">
-        <a href="/" class="logo">🎮 Kogama Archive</a>
+        <a href="/" class="logo">🎮 Archive</a>
         <div class="header-actions">
             <button class="icon-btn" onclick="openSearch()" title="Поиск">🔍</button>
             <button class="icon-btn" id="themeToggle" title="Сменить тему">🌙</button>
             <button class="icon-btn" onclick="openNewPost()" title="Новый пост">✚</button>
+            <button class="icon-btn" onclick="exportData()" title="Скачать базу">📥</button>
+            <button class="icon-btn" onclick="document.getElementById('importFile').click()" title="Загрузить базу">📤</button>
+            <input type="file" id="importFile" accept=".json" style="display:none;" onchange="importData(event)">
         </div>
     </header>
 
@@ -20,6 +23,7 @@
         <div class="tab active" data-tab="popular">🔥 Популярное</div>
         <div class="tab" data-tab="new">🆕 Новое</div>
         <div class="tab" data-tab="my">👤 Мои посты</div>
+        <div class="tab" data-tab="date">📅 По дате</div>
     </nav>
 
     <main id="feed"></main>
@@ -27,14 +31,15 @@
 
     <div class="modal-overlay" id="newPostModal">
         <div class="modal">
-            <h2>✚ Новый пост</h2>
+            <h2 id="modalTitle">✚ Новый пост</h2>
+            <input type="hidden" id="editPostId">
             <label>👤 Твой ник</label>
-            <input type="text" id="newPostAuthor" placeholder="Введи свой ник" maxlength="30">
-            <label>📝 О чём хочешь рассказать?</label>
-            <textarea id="newPostText" placeholder="Напиши свою историю, момент, баг..."></textarea>
+            <input type="text" id="newPostAuthor" placeholder="Придумай себе ник" maxlength="30">
+            <label>📝 Текст поста</label>
+            <textarea id="newPostText" placeholder="Напиши что-нибудь..."></textarea>
             
             <label>🖼️ Скриншоты</label>
-            <div class="file-upload-area" id="fileUploadArea">
+            <div class="file-upload-area">
                 <input type="file" id="fileInput" accept="image/*,video/*" multiple style="display:none;">
                 <button class="btn btn-cancel" onclick="document.getElementById('fileInput').click()" style="width:100%;">
                     📁 Выбрать файлы с устройства
@@ -43,10 +48,12 @@
             </div>
 
             <label>#️⃣ Теги (через пробел)</label>
-            <input type="text" id="newPostTags" placeholder="дракон 2016 мойпервый баг" maxlength="100">
+            <input type="text" id="newPostTags" placeholder="игры 2024 скриншот" maxlength="100">
+            <label>📌 Закрепить пост</label>
+            <input type="checkbox" id="newPostPinned" style="width:auto;margin-bottom:15px;">
             <div class="btn-row">
                 <button class="btn btn-cancel" onclick="closeNewPost()">Отмена</button>
-                <button class="btn btn-primary" onclick="publishPost()">📤 Опубликовать</button>
+                <button class="btn btn-primary" id="publishBtn" onclick="publishPost()">📤 Опубликовать</button>
             </div>
         </div>
     </div>
