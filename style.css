@@ -68,9 +68,9 @@ body {
 
 .tab {
     flex: 1;
-    padding: 12px;
+    padding: 12px 8px;
     text-align: center;
-    font-size: 14px;
+    font-size: 13px;
     color: var(--text2);
     cursor: pointer;
     border-bottom: 2px solid transparent;
@@ -87,6 +87,20 @@ body {
     overflow: hidden;
     border: 1px solid var(--border);
     animation: fadeIn 0.3s ease;
+    position: relative;
+}
+
+.post.pinned {
+    border-color: var(--accent);
+    box-shadow: 0 0 8px rgba(247,147,30,0.2);
+}
+
+.pin-badge {
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    font-size: 12px;
+    color: var(--accent);
 }
 
 @keyframes fadeIn {
@@ -118,11 +132,18 @@ body {
     font-size: 15px;
     color: var(--accent2);
     text-decoration: none;
+    cursor: pointer;
 }
 
 .post-author:hover { text-decoration: underline; }
 
 .post-time { font-size: 12px; color: var(--text3); }
+
+.post-views {
+    font-size: 12px;
+    color: var(--text3);
+    margin-left: auto;
+}
 
 .post-gallery {
     position: relative;
@@ -205,9 +226,10 @@ body {
 .post-actions {
     padding: 4px 16px 12px;
     display: flex;
-    gap: 20px;
+    gap: 16px;
     font-size: 14px;
     color: var(--text2);
+    flex-wrap: wrap;
 }
 
 .action-btn {
@@ -225,6 +247,60 @@ body {
 
 .action-btn:hover { color: var(--accent); }
 .action-btn.liked { color: var(--like); }
+.action-btn.delete-btn:hover { color: #ff4757; }
+
+.comments-section {
+    padding: 0 16px 12px;
+    border-top: 1px solid var(--border);
+    margin-top: 8px;
+    padding-top: 8px;
+}
+
+.comments-list {
+    margin-bottom: 8px;
+}
+
+.comment {
+    padding: 4px 0;
+    font-size: 13px;
+    color: var(--text2);
+}
+
+.comment strong {
+    color: var(--accent2);
+    font-weight: 600;
+}
+
+.comment-input-row {
+    display: flex;
+    gap: 8px;
+}
+
+.comment-input {
+    flex: 1;
+    padding: 6px 10px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 13px;
+    outline: none;
+    font-family: inherit;
+}
+
+.comment-input:focus { border-color: var(--accent); }
+
+.comment-submit {
+    padding: 6px 12px;
+    background: var(--accent);
+    color: #1a1a2e;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+}
 
 .load-more {
     display: block;
@@ -278,7 +354,7 @@ body {
 
 .modal label { display: block; margin-bottom: 5px; color: var(--text2); font-size: 14px; }
 
-.modal input,
+.modal input[type="text"],
 .modal textarea {
     width: 100%;
     padding: 10px;
@@ -314,8 +390,6 @@ body {
 .btn-primary:hover { background: #e07d0a; }
 .btn-cancel { background: var(--border); color: var(--text); }
 .btn-cancel:hover { background: #555; }
-
-.file-upload-area { margin-bottom: 15px; }
 
 .preview-grid {
     display: grid;
@@ -453,4 +527,5 @@ body.light .profile-modal { background: var(--bg); }
     .logo { font-size: 16px; }
     .post { margin: 8px 10px; }
     .gallery-slide img, .gallery-slide video { max-height: 300px; }
+    .tab { font-size: 11px; padding: 10px 4px; }
 }
