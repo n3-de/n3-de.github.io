@@ -13,9 +13,6 @@
             <button class="icon-btn" onclick="openSearch()" title="Поиск">🔍</button>
             <button class="icon-btn" id="themeToggle" title="Сменить тему">🌙</button>
             <button class="icon-btn" onclick="openNewPost()" title="Новый пост">✚</button>
-            <button class="icon-btn" onclick="exportData()" title="Скачать базу">📥</button>
-            <button class="icon-btn" onclick="document.getElementById('importFile').click()" title="Загрузить базу">📤</button>
-            <input type="file" id="importFile" accept=".json" style="display:none;" onchange="importData(event)">
         </div>
     </header>
 
@@ -27,7 +24,6 @@
     </nav>
 
     <main id="feed"></main>
-    <button class="load-more" id="loadMore" style="display:none;">Загрузить ещё...</button>
 
     <div class="modal-overlay" id="newPostModal">
         <div class="modal">
