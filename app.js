@@ -2,6 +2,7 @@ let posts = JSON.parse(localStorage.getItem('archive-posts') || '[]');
 let currentTab = 'popular';
 let nextId = posts.length > 0 ? Math.max(...posts.map(p => p.id)) + 1 : 1;
 let pendingFiles = [];
+let lastKnownPostCount = posts.length;
 
 function savePosts() {
     localStorage.setItem('archive-posts', JSON.stringify(posts));
@@ -29,6 +30,11 @@ document.querySelectorAll('.tab').forEach(tab => {
         tab.classList.add('active');
         currentTab = tab.dataset.tab;
         moveTabIndicator(tab);
+        if (currentTab === 'new') {
+            lastKnownPostCount = posts.length;
+            const badge = tab.querySelector('.new-badge');
+            if (badge) badge.remove();
+        }
         renderFeed();
     });
 });
@@ -127,11 +133,11 @@ function renderFeed() {
     feed.innerHTML = '';
     filtered.forEach((post, i) => {
         const el = createPostElement(post);
-        // staggered reveal, capped so a long feed doesn't take forever to finish animating
         el.style.animationDelay = (Math.min(i, 8) * 45) + 'ms';
         feed.appendChild(el);
     });
     document.querySelectorAll('.gallery-slides').forEach(initGallery);
+    updateNewBadge();
 }
 
 function createPostElement(post) {
@@ -223,6 +229,7 @@ function addComment(postId) {
     }
     const countBtn = document.querySelector(`#post-${postId} .action-btn:nth-child(2)`);
     if (countBtn) countBtn.innerHTML = `💬 ${post.comments.length}`;
+    updateNewBadge();
 }
 
 function initGallery(slidesContainer) {
@@ -253,7 +260,7 @@ function toggleLike(postId) {
         if (post.liked) {
             const glyph = btn.querySelector('.heart-glyph');
             glyph.style.animation = 'none';
-            void glyph.offsetWidth; // restart the pulse animation
+            void glyph.offsetWidth;
             glyph.style.animation = '';
         }
     }
@@ -261,14 +268,18 @@ function toggleLike(postId) {
 
 function sharePost(postId) {
     const url = `${window.location.origin}${window.location.pathname}#/post/${postId}`;
-    if (navigator.share) navigator.share({ title: 'Archive', url });
-    else navigator.clipboard.writeText(url).then(() => alert('🔗 Ссылка скопирована!'));
+    if (navigator.share) {
+        navigator.share({ title: 'Archive', url });
+    } else {
+        navigator.clipboard.writeText(url).then(() => showToast('🔗 Ссылка скопирована'));
+    }
 }
 
 function deletePost(postId) {
     if (!confirm('Точно удалить этот пост?')) return;
     posts = posts.filter(p => p.id !== postId);
     savePosts();
+    updateNewBadge();
     renderFeed();
 }
 
@@ -307,8 +318,8 @@ function publishPost() {
     const text = document.getElementById('newPostText').value.trim();
     const tagsRaw = document.getElementById('newPostTags').value.trim();
     const pinned = document.getElementById('newPostPinned').checked;
-    if (!author) { alert('Укажи ник!'); return; }
-    if (!text && pendingFiles.length === 0) { alert('Напиши текст или добавь скриншот!'); return; }
+    if (!author) { showToast('Укажи ник'); return; }
+    if (!text && pendingFiles.length === 0) { showToast('Напиши текст или добавь скриншот'); return; }
     const media = pendingFiles.map(f => f.data);
     const tags = tagsRaw ? tagsRaw.split(/\s+/).filter(t => t).map(t => t.replace(/^#/, '')) : [];
     if (editId) {
@@ -327,6 +338,10 @@ function publishPost() {
     const newTab = document.querySelector('.tab[data-tab="new"]');
     newTab.classList.add('active');
     moveTabIndicator(newTab);
+    lastKnownPostCount = posts.length;
+    const badge = newTab.querySelector('.new-badge');
+    if (badge) badge.remove();
+    updateNewBadge();
     renderFeed();
 }
 
@@ -369,6 +384,57 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+// ---------- scroll-to-top ----------
+const scrollTopBtn = document.createElement('button');
+scrollTopBtn.className = 'scroll-top';
+scrollTopBtn.innerHTML = '↑';
+scrollTopBtn.title = 'Наверх';
+scrollTopBtn.onclick = () => window.scrollTo({ top: 0, behavior: 'smooth' });
+document.body.appendChild(scrollTopBtn);
+
+window.addEventListener('scroll', () => {
+    scrollTopBtn.classList.toggle('visible', window.scrollY > 500);
+});
+
+// ---------- toast ----------
+let toastTimer;
+function showToast(msg) {
+    let toast = document.querySelector('.toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.className = 'toast';
+        document.body.appendChild(toast);
+    }
+    toast.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove('show'), 2000);
+}
+
+// ---------- new-posts badge ----------
+function updateNewBadge() {
+    const newTab = document.querySelector('.tab[data-tab="new"]');
+    if (!newTab) return;
+    const existing = newTab.querySelector('.new-badge');
+    if (currentTab === 'new') {
+        lastKnownPostCount = posts.length;
+        if (existing) existing.remove();
+        return;
+    }
+    const diff = posts.length - lastKnownPostCount;
+    if (diff > 0) {
+        if (existing) {
+            existing.textContent = diff;
+        } else {
+            const badge = document.createElement('span');
+            badge.className = 'new-badge';
+            badge.textContent = diff;
+            newTab.style.position = 'relative';
+            newTab.appendChild(badge);
+        }
+    }
 }
 
 initTheme();
