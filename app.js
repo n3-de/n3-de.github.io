@@ -1,7 +1,3 @@
-/* ==========================================================================
-   ARCHIVE — core application logic with Quote Tweet feature
-   ========================================================================== */
-
 let posts = JSON.parse(localStorage.getItem('archive-posts') || '[]');
 let currentTab = 'popular';
 let nextId = posts.length > 0 ? Math.max(...posts.map(p => p.id)) + 1 : 1;
@@ -9,16 +5,14 @@ let pendingFiles = [];
 let lastKnownPostCount = posts.length;
 let activeQuoteId = null;
 
-// Безопасное сохранение с защитой от переполнения LocalStorage
 function savePosts() {
     try {
         localStorage.setItem('archive-posts', JSON.stringify(posts));
     } catch (e) {
-        showToast('⚠️ Память браузера переполнена! Не удалось сохранить тяжелые файлы.');
+        showToast('⚠️ Память браузера переполнена!');
     }
 }
 
-// ---------- Тема оформления ----------
 const themeToggle = document.getElementById('themeToggle');
 function initTheme() {
     if (localStorage.getItem('archive-theme') === 'light') {
@@ -33,7 +27,6 @@ themeToggle.addEventListener('click', () => {
     localStorage.setItem('archive-theme', isLight ? 'light' : 'dark');
 });
 
-// ---------- Табы + Индикатор ----------
 document.querySelectorAll('.tab').forEach(tab => {
     tab.addEventListener('click', () => {
         switchTab(tab.dataset.tab);
@@ -43,12 +36,10 @@ document.querySelectorAll('.tab').forEach(tab => {
 function switchTab(tabId) {
     const tabEl = document.querySelector(`.tab[data-tab="${tabId}"]`);
     if (!tabEl) return;
-    
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     tabEl.classList.add('active');
     currentTab = tabId;
     moveTabIndicator(tabEl);
-    
     if (currentTab === 'new') {
         lastKnownPostCount = posts.length;
         const badge = tabEl.querySelector('.new-badge');
@@ -68,7 +59,6 @@ window.addEventListener('resize', () => {
     moveTabIndicator(document.querySelector('.tab.active'));
 });
 
-// ---------- Загрузка файлов (Медиа) ----------
 document.getElementById('fileInput').addEventListener('change', function(e) {
     const files = Array.from(e.target.files);
     files.forEach(file => {
@@ -92,12 +82,8 @@ function renderPreviews() {
     `).join('');
 }
 
-function removeFile(index) { 
-    pendingFiles.splice(index, 1); 
-    renderPreviews(); 
-}
+function removeFile(index) { pendingFiles.splice(index, 1); renderPreviews(); }
 
-// ---------- Генерация аватарок ----------
 function getAvatar(author) {
     return (author || '?')[0].toUpperCase();
 }
@@ -111,7 +97,6 @@ function getAvatarColor(author) {
     return `hsl(${hue}, 55%, 43%)`;
 }
 
-// ---------- Форматирование времени и ID ----------
 function timeAgo(timestamp) {
     const now = Date.now();
     const diff = now - timestamp;
@@ -119,7 +104,6 @@ function timeAgo(timestamp) {
     const minutes = Math.floor(seconds / 60);
     const hours = Math.floor(minutes / 60);
     const days = Math.floor(hours / 24);
-    
     if (days > 30) return new Date(timestamp).toLocaleDateString('ru-RU');
     if (days > 0) return days === 1 ? 'Вчера' : `${days} дн. назад`;
     if (hours > 0) return `${hours} ч. назад`;
@@ -131,7 +115,6 @@ function catalogNumber(id) {
     return '№ ' + String(id).padStart(4, '0');
 }
 
-// ---------- Рендеринг постов ----------
 function getFilteredPosts() {
     let filtered = [...posts];
     if (currentTab === 'popular') filtered.sort((a, b) => b.likes - a.likes);
@@ -176,15 +159,14 @@ function createPostElement(post) {
     if (post.media && post.media.length > 0) {
         const slides = post.media.map(url => {
             const isVideo = url.startsWith('data:video') || url.includes('mp4');
-            return isVideo 
-                ? `<div class="gallery-slide"><video src="${url}" controls preload="metadata" playsinline></video></div>` 
+            return isVideo
+                ? `<div class="gallery-slide"><video src="${url}" controls preload="metadata" playsinline></video></div>`
                 : `<div class="gallery-slide"><img src="${url}" loading="lazy"></div>`;
         }).join('');
         const dots = post.media.map((_, i) => `<span class="gallery-dot${i === 0 ? ' active' : ''}" data-index="${i}"></span>`).join('');
         mediaHTML = `<div class="post-gallery"><div class="gallery-slides">${slides}</div>${post.media.length > 1 ? `<div class="gallery-dots">${dots}</div>` : ''}</div>`;
     }
 
-    // Рендеринг цитируемого твита/поста
     let quotedHTML = '';
     if (post.quotedPostId) {
         const quotedPost = posts.find(p => p.id === post.quotedPostId);
@@ -204,7 +186,7 @@ function createPostElement(post) {
         } else {
             quotedHTML = `
                 <div class="quoted-card" style="opacity:0.6; pointer-events:none;">
-                    <div class="quoted-text"><i>🚫 Процитированная запись была удалена.</i></div>
+                    <div class="quoted-text"><i>🚫 Запись удалена.</i></div>
                 </div>
             `;
         }
@@ -216,7 +198,7 @@ function createPostElement(post) {
             <strong>${escapeHtml(c.author)}</strong> ${escapeHtml(c.text)}
             <span style="color:var(--text3);font-size:11px;margin-left:8px;">${timeAgo(c.timestamp)}</span>
         </div>`).join('');
-        
+
     const isMyPost = post.author === (localStorage.getItem('archive-mynick') || '');
     const avatarLetter = getAvatar(post.author);
     const avatarColor = getAvatarColor(post.author);
@@ -229,7 +211,6 @@ function createPostElement(post) {
                 <span class="post-author" onclick="openProfile('${escapeHtml(post.author).replace(/'/g, "\\'")}')">${escapeHtml(post.author)}</span>
                 <div class="post-time">${timeAgo(post.timestamp)}</div>
             </div>
-            <span class="post-views">👁 ${post.views || 0}</span>
         </div>
         ${mediaHTML}
         <div class="post-text">${escapeHtml(post.text)}</div>
@@ -237,11 +218,12 @@ function createPostElement(post) {
         <div class="post-tags">${tagsHTML}</div>
         <div class="post-actions">
             <button class="action-btn ${post.liked ? 'liked' : ''}" onclick="toggleLike(${post.id})">
-                <span class="heart-glyph">❤️</span> <span>${post.likes}</span>
+                <span class="reaction-glyph">👍</span> <span>${post.likes}</span>
             </button>
             <button class="action-btn" onclick="toggleComments(${post.id})">💬 ${(post.comments || []).length}</button>
-            <button class="action-btn" onclick="quotePost(${post.id})" title="Цитировать">🔁</button>
-            <span class="action-btn" onclick="sharePost(${post.id})" style="cursor:pointer;">🔗</span>
+            <span class="action-btn">👁 ${post.views || 0}</span>
+            <button class="action-btn" onclick="quotePost(${post.id})">🔁</button>
+            <button class="action-btn" onclick="sharePost(${post.id})">🔗</button>
             ${isMyPost ? `<button class="action-btn" onclick="editPost(${post.id})">✏️</button>` : ''}
             ${isMyPost ? `<button class="action-btn delete-btn" onclick="deletePost(${post.id})">🗑</button>` : ''}
         </div>
@@ -262,17 +244,14 @@ function createPostElement(post) {
     return div;
 }
 
-// Навигация к конкретному посту со скроллом и анимацией фокуса
 function navigateToPost(postId) {
     const targetPost = posts.find(p => p.id === postId);
     if (!targetPost) return;
-
     let el = document.getElementById(`post-${postId}`);
     if (!el) {
         switchTab('new');
         el = document.getElementById(`post-${postId}`);
     }
-
     if (el) {
         el.scrollIntoView({ behavior: 'smooth', block: 'center' });
         el.style.borderColor = 'var(--accent)';
@@ -282,18 +261,14 @@ function navigateToPost(postId) {
     }
 }
 
-// ---------- Логика цитирования ----------
 function quotePost(postId) {
     const post = posts.find(p => p.id === postId);
     if (!post) return;
     activeQuoteId = postId;
-    
     openNewPost();
-    
     const previewArea = document.getElementById('quotedPreviewArea');
     const previewContent = document.getElementById('quotedPreviewContent');
     const quotedIdInput = document.getElementById('quotedPostIdInput');
-    
     if (previewArea && previewContent && quotedIdInput) {
         previewArea.classList.add('show');
         previewContent.innerHTML = `<strong>@${escapeHtml(post.author)}</strong>: "${escapeHtml(post.text.substring(0, 100))}${post.text.length > 100 ? '...' : ''}"`;
@@ -309,7 +284,6 @@ function removeQuoteFromNewPost() {
     if (quotedIdInput) quotedIdInput.value = '';
 }
 
-// ---------- Комментарии ----------
 function toggleComments(postId) {
     const section = document.getElementById(`comments-${postId}`);
     if (section) {
@@ -329,11 +303,9 @@ function addComment(postId) {
     const post = posts.find(p => p.id === postId);
     if (!post) return;
     if (!post.comments) post.comments = [];
-    
     post.comments.push({ author, text, timestamp: Date.now() });
     savePosts();
     input.value = '';
-    
     const list = document.getElementById(`comments-list-${postId}`);
     if (list) {
         const c = post.comments[post.comments.length - 1];
@@ -350,7 +322,6 @@ function addComment(postId) {
     updateNewBadge();
 }
 
-// ---------- Галерея скриншотов ----------
 function initGallery(slidesContainer) {
     const dots = slidesContainer.parentElement.querySelectorAll('.gallery-dot');
     if (!dots.length) return;
@@ -366,7 +337,6 @@ function initGallery(slidesContainer) {
     });
 }
 
-// ---------- Лайки ----------
 function toggleLike(postId) {
     const post = posts.find(p => p.id === postId);
     if (!post) return;
@@ -380,17 +350,15 @@ function toggleLike(postId) {
     }
 }
 
-// ---------- Поделиться постом ----------
 function sharePost(postId) {
     const url = `${window.location.origin}${window.location.pathname}#/post/${postId}`;
     if (navigator.share) {
-        navigator.share({ title: 'Архив проекта', url });
+        navigator.share({ title: 'Archive', url });
     } else {
-        navigator.clipboard.writeText(url).then(() => showToast('🔗 Ссылка скопирована в буфер'));
+        navigator.clipboard.writeText(url).then(() => showToast('🔗 Ссылка скопирована'));
     }
 }
 
-// ---------- Хэш-роутер для прямых ссылок ----------
 function handleHashRoute() {
     const hash = window.location.hash;
     if (hash.startsWith('#/post/')) {
@@ -403,9 +371,8 @@ function handleHashRoute() {
 window.addEventListener('hashchange', handleHashRoute);
 window.addEventListener('load', handleHashRoute);
 
-// ---------- Управление постами (CRUD) ----------
 function deletePost(postId) {
-    if (!confirm('Удалить эту запись безвозвратно?')) return;
+    if (!confirm('Удалить эту запись?')) return;
     posts = posts.filter(p => p.id !== postId);
     savePosts();
     updateNewBadge();
@@ -424,7 +391,6 @@ function editPost(postId) {
     document.getElementById('publishBtn').textContent = '💾 Сохранить';
     pendingFiles = [];
     renderPreviews();
-    
     document.getElementById('quotedPostIdInput').value = post.quotedPostId || '';
     if (post.quotedPostId) {
         const quotedPost = posts.find(p => p.id === post.quotedPostId);
@@ -435,11 +401,10 @@ function editPost(postId) {
     } else {
         removeQuoteFromNewPost();
     }
-    
     document.getElementById('newPostModal').classList.add('open');
 }
 
-function openNewPost() { 
+function openNewPost() {
     document.getElementById('modalTitle').textContent = '✚ Новый пост';
     document.getElementById('editPostId').value = '';
     document.getElementById('newPostAuthor').value = localStorage.getItem('archive-mynick') || '';
@@ -450,7 +415,7 @@ function openNewPost() {
     pendingFiles = [];
     renderPreviews();
     removeQuoteFromNewPost();
-    document.getElementById('newPostModal').classList.add('open'); 
+    document.getElementById('newPostModal').classList.add('open');
 }
 function closeNewPost() { document.getElementById('newPostModal').classList.remove('open'); }
 
@@ -461,50 +426,29 @@ function publishPost() {
     const text = document.getElementById('newPostText').value.trim();
     const tagsRaw = document.getElementById('newPostTags').value.trim();
     const pinned = document.getElementById('newPostPinned').checked;
-    
-    if (!author) { showToast('Укажи свой никнейм'); return; }
-    if (!text && pendingFiles.length === 0 && !quotedId) { showToast('Напиши текст, загрузи медиа или процитируй кого-то!'); return; }
-    
+
+    if (!author) { showToast('Укажи ник'); return; }
+    if (!text && pendingFiles.length === 0 && !quotedId) { showToast('Напиши текст, загрузи медиа или процитируй кого-то'); return; }
+
     const media = pendingFiles.map(f => f.data);
     const tags = tagsRaw ? tagsRaw.split(/\s+/).filter(t => t).map(t => t.replace(/^#/, '')) : [];
-    
+
     if (editId) {
         const post = posts.find(p => p.id === parseInt(editId));
-        if (post) { 
-            post.author = author; 
-            post.text = text || ''; 
-            post.tags = tags; 
-            post.pinned = pinned; 
-            if (media.length > 0) post.media = media; 
-        }
+        if (post) { post.author = author; post.text = text || ''; post.tags = tags; post.pinned = pinned; if (media.length > 0) post.media = media; }
     } else {
-        posts.unshift({ 
-            id: nextId++, 
-            author, 
-            text: text || '', 
-            media, 
-            tags, 
-            pinned, 
-            likes: 0, 
-            liked: false, 
-            views: 0, 
-            comments: [], 
-            timestamp: Date.now(),
-            quotedPostId: quotedId ? parseInt(quotedId) : null
-        });
+        posts.unshift({ id: nextId++, author, text: text || '', media, tags, pinned, likes: 0, liked: false, views: 0, comments: [], timestamp: Date.now(), quotedPostId: quotedId ? parseInt(quotedId) : null });
     }
-    
+
     savePosts();
     localStorage.setItem('archive-mynick', author);
     closeNewPost();
     pendingFiles = [];
     renderPreviews();
     removeQuoteFromNewPost();
-    
     switchTab('new');
 }
 
-// ---------- Глобальный поиск ----------
 function openSearch() { document.getElementById('searchModal').classList.add('open'); document.getElementById('searchInput').focus(); }
 function closeSearch() { document.getElementById('searchModal').classList.remove('open'); }
 
@@ -512,11 +456,9 @@ function doSearch() {
     const query = document.getElementById('searchInput').value.toLowerCase().trim();
     const results = document.getElementById('searchResults');
     if (!query) { results.innerHTML = 'Начни вводить запрос...'; return; }
-    
     const found = posts.filter(p => p.text.toLowerCase().includes(query) || p.author.toLowerCase().includes(query) || p.tags.some(t => t.toLowerCase().includes(query)));
     if (!found.length) { results.innerHTML = '😕 Ничего не найдено'; return; }
-    
-    results.innerHTML = `<p style="color:var(--text2);margin-bottom:10px;font-family:var(--font-mono);font-size:12px;">Найдено записей: ${found.length}</p>` + found.map(p => `
+    results.innerHTML = `<p style="color:var(--text2);margin-bottom:10px;font-family:var(--font-mono);font-size:12px;">Найдено: ${found.length}</p>` + found.map(p => `
         <div class="search-result" onclick="closeSearch(); navigateToPost(${p.id})">
             <div class="author">👤 ${escapeHtml(p.author)}</div>
             <div class="text">${escapeHtml(p.text.substring(0, 100))}${p.text.length > 100 ? '...' : ''}</div>
@@ -524,35 +466,27 @@ function doSearch() {
         </div>`).join('');
 }
 
-function searchTag(tag) { 
-    openSearch(); 
-    document.getElementById('searchInput').value = tag; 
-    doSearch(); 
-}
+function searchTag(tag) { openSearch(); document.getElementById('searchInput').value = tag; doSearch(); }
 
-// ---------- Профиль пользователя ----------
 function openProfile(author) {
     const modal = document.getElementById('profileModal');
     const userPosts = posts.filter(p => p.author === author);
     const totalLikes = userPosts.reduce((sum, p) => sum + p.likes, 0);
     const avatarLetter = getAvatar(author);
     const avatarColor = getAvatarColor(author);
-    
     document.getElementById('profileHeader').innerHTML = `
         <div class="profile-avatar" style="background:${avatarColor};">${avatarLetter}</div>
         <div class="profile-info">
             <h2>👤 ${escapeHtml(author)}</h2>
             <p>📝 Постов: ${userPosts.length} | ❤️ Лайков: ${totalLikes}</p>
         </div>`;
-        
-    document.getElementById('profilePosts').innerHTML = userPosts.length === 0 
-        ? '<p style="color:var(--text2);text-align:center;padding:20px;">Пока пустует...</p>'
+    document.getElementById('profilePosts').innerHTML = userPosts.length === 0
+        ? '<p style="color:var(--text2);text-align:center;padding:20px;">Пока пусто...</p>'
         : userPosts.map(p => `
             <div class="profile-post" onclick="closeProfile(); navigateToPost(${p.id})">
                 <div style="color:var(--text3);font-size:11px;font-family:var(--font-mono);">${timeAgo(p.timestamp)}</div>
                 <div class="text">${escapeHtml(p.text.substring(0, 120))}${p.text.length > 120 ? '...' : ''}</div>
             </div>`).join('');
-            
     modal.classList.add('open');
 }
 function closeProfile() { document.getElementById('profileModal').classList.remove('open'); }
@@ -563,7 +497,6 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-// ---------- Кнопка "Наверх" ----------
 const scrollTopBtn = document.createElement('button');
 scrollTopBtn.className = 'scroll-top';
 scrollTopBtn.innerHTML = '↑';
@@ -574,7 +507,6 @@ window.addEventListener('scroll', () => {
     scrollTopBtn.classList.toggle('visible', window.scrollY > 500);
 });
 
-// ---------- Системные уведомления (Тосты) ----------
 let toastTimer;
 function showToast(msg) {
     let toast = document.querySelector('.toast');
@@ -589,7 +521,6 @@ function showToast(msg) {
     toastTimer = setTimeout(() => toast.classList.remove('show'), 2500);
 }
 
-// ---------- Счетчик новых постов (Badge) ----------
 function updateNewBadge() {
     const newTab = document.querySelector('.tab[data-tab="new"]');
     if (!newTab) return;
@@ -612,7 +543,6 @@ function updateNewBadge() {
     }
 }
 
-// ---------- Инициализация при старте ----------
 initTheme();
 renderFeed();
 moveTabIndicator(document.querySelector('.tab.active'));
