@@ -3,12 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ARCHIVE — Твой Бортжурнал</title>
+    <title>ARCHIVE</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🗃</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-    <!-- Шапка сайта -->
     <header class="main-header">
         <div class="logo" onclick="switchTab('popular')">ARCHIVE</div>
         <div class="header-controls">
@@ -18,7 +20,6 @@
         </div>
     </header>
 
-    <!-- Навигация по табам -->
     <nav class="tabs-container">
         <div class="tabs-wrapper">
             <button class="tab active" data-tab="popular">Популярное</button>
@@ -29,33 +30,26 @@
         </div>
     </nav>
 
-    <!-- Главная лента -->
     <main class="feed-container" id="feed"></main>
 
-    <!-- МОДАЛЬНОЕ ОКНО: Новый пост / Редактирование -->
     <div class="modal-overlay" id="newPostModal">
         <div class="modal">
             <h2 id="modalTitle">✚ Новый пост</h2>
             <input type="hidden" id="editPostId">
-            
-            <!-- Блок цитирования (Twitter Style) -->
             <input type="hidden" id="quotedPostIdInput">
             <div class="quoted-preview-area" id="quotedPreviewArea">
                 <span class="quote-label">Вы цитируете:</span>
                 <div id="quotedPreviewContent"></div>
                 <button class="remove-quote" onclick="removeQuoteFromNewPost()" type="button">✕</button>
             </div>
-
             <div class="form-group">
                 <label for="newPostAuthor">Твой ник</label>
-                <input type="text" id="newPostAuthor" placeholder="Например, @elonmusk" maxlength="30">
+                <input type="text" id="newPostAuthor" placeholder="Придумай себе ник" maxlength="30">
             </div>
-
             <div class="form-group">
                 <label for="newPostText">Что нового?</label>
-                <textarea id="newPostText" rows="5" placeholder="Поделись мыслями или апдейтом проекта..."></textarea>
+                <textarea id="newPostText" rows="5" placeholder="Поделись мыслями..."></textarea>
             </div>
-
             <div class="form-group">
                 <label>Медиафайлы</label>
                 <div class="file-upload-wrapper">
@@ -64,19 +58,16 @@
                 </div>
                 <div class="preview-grid" id="previewGrid"></div>
             </div>
-
             <div class="form-group">
                 <label for="newPostTags">Теги (через пробел)</label>
-                <input type="text" id="newPostTags" placeholder="dev ui баг идеи">
+                <input type="text" id="newPostTags" placeholder="ваши теги" maxlength="100">
             </div>
-
             <div class="form-row">
                 <label class="checkbox-container">
                     <input type="checkbox" id="newPostPinned">
-                    <span class="checkmark"></span> Закрепить пост в топе
+                    <span class="checkmark"></span> Закрепить пост
                 </label>
             </div>
-
             <div class="modal-actions">
                 <button class="secondary-btn" onclick="closeNewPost()">Отмена</button>
                 <button class="primary-btn" id="publishBtn" onclick="publishPost()">📤 Опубликовать</button>
@@ -84,7 +75,6 @@
         </div>
     </div>
 
-    <!-- МОДАЛЬНОЕ ОКНО: Глобальный поиск -->
     <div class="modal-overlay" id="searchModal" onclick="if(event.target===this) closeSearch()">
         <div class="modal search-modal">
             <div class="search-header">
@@ -95,7 +85,6 @@
         </div>
     </div>
 
-    <!-- МОДАЛЬНОЕ ОКНО: Профиль пользователя -->
     <div class="modal-overlay" id="profileModal" onclick="if(event.target===this) closeProfile()">
         <div class="modal profile-modal">
             <button class="close-profile-btn" onclick="closeProfile()">✕</button>
