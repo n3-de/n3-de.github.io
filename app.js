@@ -5,21 +5,160 @@ let pendingFiles = [];
 let lastKnownPostCount = posts.length;
 let activeQuoteId = null;
 
+// ========== Переводы ==========
+const translations = {
+    ru: {
+        tabs: {
+            popular: 'ПОПУЛЯРНОЕ',
+            new: 'НОВОЕ',
+            date: 'ХРОНОЛОГИЯ',
+            my: 'МОИ ПОСТЫ'
+        },
+        header: { write: '✚ Написать', search: 'Поиск', theme: 'Сменить тему' },
+        post: {
+            pinned: '📌 Закреп.',
+            comments: 'Пока нет комментариев',
+            writeComment: 'Написать комментарий...',
+            send: 'Отпр.',
+            delete: 'Удалить эту запись?',
+            edit: '✏️ Редактировать пост',
+            new: '✚ Новый пост',
+            publish: '📤 Опубликовать',
+            save: '💾 Сохранить',
+            cancel: 'Отмена',
+            author: 'Твой ник',
+            text: 'Что нового?',
+            media: 'Медиафайлы',
+            tags: 'Теги (через пробел)',
+            pin: 'Закрепить пост',
+            quote: 'Вы цитируете:',
+            placeholder: {
+                nick: 'Придумай себе ник',
+                text: 'Поделись мыслями...',
+                tags: '#Ваши теги',
+                search: 'Поиск по тексту, автору или #тегу...'
+            }
+        },
+        profile: { posts: 'Записи автора:', empty: 'Пока пусто...', noPosts: 'Пока нет ни одного поста', hint: 'Нажимай ✚ чтобы добавить первую запись!' },
+        search: { placeholder: 'Начни вводить запрос...', notFound: '😕 Ничего не найдено', found: 'Найдено' },
+        toast: { nick: 'Укажи ник', empty: 'Напиши текст, загрузи медиа или процитируй кого-то', link: '🔗 Ссылка скопирована', lang: 'Язык изменён на Русский', memory: '⚠️ Память браузера переполнена!' }
+    },
+    en: {
+        tabs: {
+            popular: 'POPULAR',
+            new: 'NEW',
+            date: 'CHRONOLOGY',
+            my: 'MY POSTS'
+        },
+        header: { write: '✚ Write', search: 'Search', theme: 'Toggle theme' },
+        post: {
+            pinned: '📌 Pinned',
+            comments: 'No comments yet',
+            writeComment: 'Write a comment...',
+            send: 'Send',
+            delete: 'Delete this post?',
+            edit: '✏️ Edit post',
+            new: '✚ New post',
+            publish: '📤 Publish',
+            save: '💾 Save',
+            cancel: 'Cancel',
+            author: 'Your nickname',
+            text: 'What\'s new?',
+            media: 'Media files',
+            tags: 'Tags (space separated)',
+            pin: 'Pin post',
+            quote: 'You are quoting:',
+            placeholder: {
+                nick: 'Choose a nickname',
+                text: 'Share your thoughts...',
+                tags: '#Your tags',
+                search: 'Search by text, author or #tag...'
+            }
+        },
+        profile: { posts: 'Author posts:', empty: 'Empty...', noPosts: 'No posts yet', hint: 'Press ✚ to add first post!' },
+        search: { placeholder: 'Start typing...', notFound: '😕 Nothing found', found: 'Found' },
+        toast: { nick: 'Enter nickname', empty: 'Write text, upload media or quote someone', link: '🔗 Link copied', lang: 'Language changed to English', memory: '⚠️ Browser storage full!' }
+    }
+};
+
+let currentLang = localStorage.getItem('archive-lang') || 'ru';
+
+function t(path) {
+    const keys = path.split('.');
+    let result = translations[currentLang];
+    for (const key of keys) {
+        result = result?.[key];
+    }
+    return result || path;
+}
+
+function updateAllTexts() {
+    document.querySelectorAll('.tab').forEach(tab => {
+        const tabKey = tab.dataset.tab;
+        if (translations[currentLang].tabs[tabKey]) {
+            tab.textContent = translations[currentLang].tabs[tabKey];
+        }
+    });
+
+    const writeBtn = document.querySelector('.primary-btn');
+    if (writeBtn) writeBtn.textContent = t('header.write');
+
+    const authorInput = document.getElementById('newPostAuthor');
+    const textInput = document.getElementById('newPostText');
+    const tagsInput = document.getElementById('newPostTags');
+    const searchInput = document.getElementById('searchInput');
+
+    if (authorInput) authorInput.placeholder = t('post.placeholder.nick');
+    if (textInput) textInput.placeholder = t('post.placeholder.text');
+    if (tagsInput) tagsInput.placeholder = t('post.placeholder.tags');
+    if (searchInput) searchInput.placeholder = t('post.placeholder.search');
+
+    const searchResults = document.getElementById('searchResults');
+    if (searchResults) {
+        if (searchResults.textContent === 'Начни вводить запрос...' || searchResults.textContent === 'Start typing...') {
+            searchResults.textContent = t('search.placeholder');
+        }
+    }
+
+    const modalTitle = document.getElementById('modalTitle');
+    const editId = document.getElementById('editPostId').value;
+    if (modalTitle && document.getElementById('newPostModal').classList.contains('open')) {
+        modalTitle.textContent = editId ? t('post.edit') : t('post.new');
+    }
+
+    const publishBtn = document.getElementById('publishBtn');
+    if (publishBtn && !editId) publishBtn.textContent = t('post.publish');
+
+    renderFeed();
+}
+
 function savePosts() {
     try {
         localStorage.setItem('archive-posts', JSON.stringify(posts));
     } catch (e) {
-        showToast('⚠️ Память браузера переполнена!');
+        showToast(t('toast.memory'));
     }
 }
 
 const themeToggle = document.getElementById('themeToggle');
+
 function initTheme() {
     if (localStorage.getItem('archive-theme') === 'light') {
         document.body.classList.add('light');
         themeToggle.textContent = '☀️';
     }
+    currentLang = localStorage.getItem('archive-lang') || 'ru';
+    const flag = currentLang === 'ru' ? '🇷🇺' : '🇺🇸';
+    document.getElementById('currentFlag').textContent = flag;
+    document.querySelectorAll('.lang-option').forEach(opt => {
+        opt.classList.remove('active');
+        if (opt.querySelector('span').textContent === flag) {
+            opt.classList.add('active');
+        }
+    });
+    updateAllTexts();
 }
+
 themeToggle.addEventListener('click', () => {
     document.body.classList.toggle('light');
     const isLight = document.body.classList.contains('light');
@@ -84,9 +223,7 @@ function renderPreviews() {
 
 function removeFile(index) { pendingFiles.splice(index, 1); renderPreviews(); }
 
-function getAvatar(author) {
-    return (author || '?')[0].toUpperCase();
-}
+function getAvatar(author) { return (author || '?')[0].toUpperCase(); }
 
 function getAvatarColor(author) {
     let hash = 0;
@@ -111,9 +248,7 @@ function timeAgo(timestamp) {
     return 'Только что';
 }
 
-function catalogNumber(id) {
-    return '№ ' + String(id).padStart(4, '0');
-}
+function catalogNumber(id) { return '№ ' + String(id).padStart(4, '0'); }
 
 function getFilteredPosts() {
     let filtered = [...posts];
@@ -135,8 +270,8 @@ function renderFeed() {
         feed.innerHTML = `
             <div class="empty-state">
                 <div class="emoji">📝</div>
-                <p>Пока нет ни одного поста</p>
-                <p class="hint">Нажимай ✚ чтобы добавить первую запись!</p>
+                <p>${t('profile.noPosts')}</p>
+                <p class="hint">${t('profile.hint')}</p>
             </div>`;
         return;
     }
@@ -181,14 +316,9 @@ function createPostElement(post) {
                         <span class="quoted-time">• ${timeAgo(quotedPost.timestamp)}</span>
                     </div>
                     <div class="quoted-text">${escapeHtml(quotedPost.text)}</div>
-                </div>
-            `;
+                </div>`;
         } else {
-            quotedHTML = `
-                <div class="quoted-card" style="opacity:0.6; pointer-events:none;">
-                    <div class="quoted-text"><i>🚫 Запись удалена.</i></div>
-                </div>
-            `;
+            quotedHTML = `<div class="quoted-card" style="opacity:0.6; pointer-events:none;"><div class="quoted-text"><i>🚫 Запись удалена.</i></div></div>`;
         }
     }
 
@@ -202,12 +332,11 @@ function createPostElement(post) {
     const isMyPost = post.author === (localStorage.getItem('archive-mynick') || '');
     const avatarLetter = getAvatar(post.author);
     const avatarColor = getAvatarColor(post.author);
-
     const quotesCount = posts.filter(p => p.quotedPostId === post.id).length;
 
-    const heartIcon = post.liked 
+    const heartIcon = post.liked
         ? `<svg viewBox="0 0 24 24" class="action-icon"><g><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"></path></g></svg>`
-        : `<svg viewBox="0 0 24 24" class="action-icon"><g><path d="M16.697 5.5c-1.222-.06-2.679.69-3.894 2.04L12 8.4l-.803-.86C9.982 6.19 8.525 5.44 7.303 5.5 5.14 5.6 3 7.53 3 11c0 3.82 4.29 8.27 8.53 11.53.27.21.67.21.94 0C16.71 19.27 21 14.82 21 11c0-3.47-2.14-5.4-4.303-5.5zM12 20.17C8.19 17.17 5 13.25 5 11c0-2.13 1.15-3.5 2.53-3.56.65-.03 1.57.41 2.53 1.49l1.94 2.1 1.94-2.1c.96-1.08 1.88-1.52 2.53-1.49C17.85 7.5 19 8.87 19 11c0 2.25-3.19 6.17-7 9.17z"></path></g></svg>`;
+        : `<svg viewBox="0 0 24 24" class="action-icon"><g><path d="M16.697 5.5c-1.222-.06-2.679.69-3.894 2.04L12 8.4l-.803-.86C9.982 6.19 8.525 5.44 7.303 5.5 5.14 5.6 3 7.5 3 11c0 3.82 4.29 8.27 8.53 11.53.27.21.67.21.94 0C16.71 19.27 21 14.82 21 11c0-3.47-2.14-5.4-4.303-5.5zM12 20.17C8.19 17.17 5 13.25 5 11c0-2.13 1.15-3.5 2.53-3.56.65-.03 1.57.41 2.53 1.49l1.94 2.1 1.94-2.1c.96-1.08 1.88-1.52 2.53-1.49C17.85 7.5 19 8.87 19 11c0 2.25-3.19 6.17-7 9.17z"></path></g></svg>`;
 
     const actionsHTML = `
         <div class="post-actions">
@@ -238,11 +367,10 @@ function createPostElement(post) {
                 <svg viewBox="0 0 24 24" class="action-icon"><g><path d="M16 9v10H8V9h8m-1.5-6h-5l-1 1H5v2h14V4h-3.5l-1-1zM18 7H6v12c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7z"></path></g></svg>
             </button>
             ` : ''}
-        </div>
-    `;
+        </div>`;
 
     div.innerHTML = `
-        ${post.pinned ? '<div class="pin-badge">📌 Закреп.</div>' : `<div class="catalog-no">${catalogNumber(post.id)}</div>`}
+        ${post.pinned ? `<div class="pin-badge">${t('post.pinned')}</div>` : `<div class="catalog-no">${catalogNumber(post.id)}</div>`}
         <div class="post-header">
             <div class="post-avatar" style="background:${avatarColor};">${avatarLetter}</div>
             <div>
@@ -256,13 +384,12 @@ function createPostElement(post) {
         <div class="post-tags">${tagsHTML}</div>
         ${actionsHTML}
         <div class="comments-section" id="comments-${post.id}" style="display:none;">
-            <div class="comments-list" id="comments-list-${post.id}">${commentsHTML || '<div style="color:var(--text3);font-size:13px;">Пока нет комментариев</div>'}</div>
+            <div class="comments-list" id="comments-list-${post.id}">${commentsHTML || `<div style="color:var(--text3);font-size:13px;">${t('post.comments')}</div>`}</div>
             <div class="comment-input-row">
-                <input class="comment-input" id="comment-input-${post.id}" placeholder="Написать комментарий...">
-                <button class="comment-submit" onclick="addComment(${post.id})">Отпр.</button>
+                <input class="comment-input" id="comment-input-${post.id}" placeholder="${t('post.writeComment')}">
+                <button class="comment-submit" onclick="addComment(${post.id})">${t('post.send')}</button>
             </div>
-        </div>
-    `;
+        </div>`;
 
     if (!post._viewed) {
         post.views = (post.views || 0) + 1;
@@ -338,12 +465,8 @@ function addComment(postId) {
     if (list) {
         const c = post.comments[post.comments.length - 1];
         const empty = list.querySelector('div');
-        if (empty && empty.textContent === 'Пока нет комментариев') list.innerHTML = '';
-        list.innerHTML += `
-            <div class="comment">
-                <strong>${escapeHtml(c.author)}</strong> ${escapeHtml(c.text)}
-                <span style="color:var(--text3);font-size:11px;margin-left:8px;">${timeAgo(c.timestamp)}</span>
-            </div>`;
+        if (empty && empty.textContent === t('post.comments')) list.innerHTML = '';
+        list.innerHTML += `<div class="comment"><strong>${escapeHtml(c.author)}</strong> ${escapeHtml(c.text)}<span style="color:var(--text3);font-size:11px;margin-left:8px;">${timeAgo(c.timestamp)}</span></div>`;
     }
     const countBtn = document.querySelector(`#post-${postId} .btn-comment`);
     if (countBtn) countBtn.querySelector('span').textContent = post.comments.length;
@@ -377,7 +500,7 @@ function toggleLike(postId) {
         btn.querySelector('span').textContent = post.likes;
         const glyph = btn.querySelector('.reaction-glyph');
         if (glyph) {
-            glyph.innerHTML = post.liked 
+            glyph.innerHTML = post.liked
                 ? `<svg viewBox="0 0 24 24" class="action-icon"><g><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"></path></g></svg>`
                 : `<svg viewBox="0 0 24 24" class="action-icon"><g><path d="M16.697 5.5c-1.222-.06-2.679.69-3.894 2.04L12 8.4l-.803-.86C9.982 6.19 8.525 5.44 7.303 5.5 5.14 5.6 3 7.5 3 11c0 3.82 4.29 8.27 8.53 11.53.27.21.67.21.94 0C16.71 19.27 21 14.82 21 11c0-3.47-2.14-5.4-4.303-5.5zM12 20.17C8.19 17.17 5 13.25 5 11c0-2.13 1.15-3.5 2.53-3.56.65-.03 1.57.41 2.53 1.49l1.94 2.1 1.94-2.1c.96-1.08 1.88-1.52 2.53-1.49C17.85 7.5 19 8.87 19 11c0 2.25-3.19 6.17-7 9.17z"></path></g></svg>`;
         }
@@ -389,7 +512,7 @@ function sharePost(postId) {
     if (navigator.share) {
         navigator.share({ title: 'Archive', url });
     } else {
-        navigator.clipboard.writeText(url).then(() => showToast('🔗 Ссылка скопирована'));
+        navigator.clipboard.writeText(url).then(() => showToast(t('toast.link')));
     }
 }
 
@@ -406,7 +529,7 @@ window.addEventListener('hashchange', handleHashRoute);
 window.addEventListener('load', handleHashRoute);
 
 function deletePost(postId) {
-    if (!confirm('Удалить эту запись?')) return;
+    if (!confirm(t('post.delete'))) return;
     posts = posts.filter(p => p.id !== postId);
     savePosts();
     updateNewBadge();
@@ -416,13 +539,13 @@ function deletePost(postId) {
 function editPost(postId) {
     const post = posts.find(p => p.id === postId);
     if (!post) return;
-    document.getElementById('modalTitle').textContent = '✏️ Редактировать пост';
+    document.getElementById('modalTitle').textContent = t('post.edit');
     document.getElementById('editPostId').value = postId;
     document.getElementById('newPostAuthor').value = post.author;
     document.getElementById('newPostText').value = post.text;
     document.getElementById('newPostTags').value = post.tags.join(' ');
     document.getElementById('newPostPinned').checked = post.pinned || false;
-    document.getElementById('publishBtn').textContent = '💾 Сохранить';
+    document.getElementById('publishBtn').textContent = t('post.save');
     pendingFiles = [];
     renderPreviews();
     document.getElementById('quotedPostIdInput').value = post.quotedPostId || '';
@@ -439,13 +562,13 @@ function editPost(postId) {
 }
 
 function openNewPost() {
-    document.getElementById('modalTitle').textContent = '✚ Новый пост';
+    document.getElementById('modalTitle').textContent = t('post.new');
     document.getElementById('editPostId').value = '';
     document.getElementById('newPostAuthor').value = localStorage.getItem('archive-mynick') || '';
     document.getElementById('newPostText').value = '';
     document.getElementById('newPostTags').value = '';
     document.getElementById('newPostPinned').checked = false;
-    document.getElementById('publishBtn').textContent = '📤 Опубликовать';
+    document.getElementById('publishBtn').textContent = t('post.publish');
     pendingFiles = [];
     renderPreviews();
     removeQuoteFromNewPost();
@@ -461,8 +584,8 @@ function publishPost() {
     const tagsRaw = document.getElementById('newPostTags').value.trim();
     const pinned = document.getElementById('newPostPinned').checked;
 
-    if (!author) { showToast('Укажи ник'); return; }
-    if (!text && pendingFiles.length === 0 && !quotedId) { showToast('Напиши текст, загрузи медиа или процитируй кого-то'); return; }
+    if (!author) { showToast(t('toast.nick')); return; }
+    if (!text && pendingFiles.length === 0 && !quotedId) { showToast(t('toast.empty')); return; }
 
     const media = pendingFiles.map(f => f.data);
     const tags = tagsRaw ? tagsRaw.split(/\s+/).filter(t => t).map(t => t.replace(/^#/, '')) : [];
@@ -489,10 +612,10 @@ function closeSearch() { document.getElementById('searchModal').classList.remove
 function doSearch() {
     const query = document.getElementById('searchInput').value.toLowerCase().trim();
     const results = document.getElementById('searchResults');
-    if (!query) { results.innerHTML = 'Начни вводить запрос...'; return; }
+    if (!query) { results.innerHTML = t('search.placeholder'); return; }
     const found = posts.filter(p => p.text.toLowerCase().includes(query) || p.author.toLowerCase().includes(query) || p.tags.some(t => t.toLowerCase().includes(query)));
-    if (!found.length) { results.innerHTML = '😕 Ничего не найдено'; return; }
-    results.innerHTML = `<p style="color:var(--text2);margin-bottom:10px;font-family:var(--font-mono);font-size:12px;">Найдено: ${found.length}</p>` + found.map(p => `
+    if (!found.length) { results.innerHTML = t('search.notFound'); return; }
+    results.innerHTML = `<p style="color:var(--text2);margin-bottom:10px;font-family:var(--font-mono);font-size:12px;">${t('search.found')}: ${found.length}</p>` + found.map(p => `
         <div class="search-result" onclick="closeSearch(); navigateToPost(${p.id})">
             <div class="author">👤 ${escapeHtml(p.author)}</div>
             <div class="text">${escapeHtml(p.text.substring(0, 100))}${p.text.length > 100 ? '...' : ''}</div>
@@ -512,10 +635,10 @@ function openProfile(author) {
         <div class="profile-avatar" style="background:${avatarColor};">${avatarLetter}</div>
         <div class="profile-info">
             <h2>👤 ${escapeHtml(author)}</h2>
-            <p>📝 Постов: ${userPosts.length} | ❤️ Лайков: ${totalLikes}</p>
+            <p>📝 ${t('profile.posts')}: ${userPosts.length} | ❤️ ${totalLikes}</p>
         </div>`;
     document.getElementById('profilePosts').innerHTML = userPosts.length === 0
-        ? '<p style="color:var(--text2);text-align:center;padding:20px;">Пока пусто...</p>'
+        ? `<p style="color:var(--text2);text-align:center;padding:20px;">${t('profile.empty')}</p>`
         : userPosts.map(p => `
             <div class="profile-post" onclick="closeProfile(); navigateToPost(${p.id})">
                 <div style="color:var(--text3);font-size:11px;font-family:var(--font-mono);">${timeAgo(p.timestamp)}</div>
@@ -598,6 +721,9 @@ function setLanguage(lang, flag) {
             opt.classList.add('active');
         }
     });
+    currentLang = lang;
+    localStorage.setItem('archive-lang', lang);
+    updateAllTexts();
     showToast(lang === 'ru' ? 'Язык изменён на Русский' : 'Language changed to English');
 }
 
