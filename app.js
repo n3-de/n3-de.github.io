@@ -3,7 +3,9 @@ let currentTab = 'popular';
 let nextId = posts.length > 0 ? Math.max(...posts.map(p => p.id)) + 1 : 1;
 let pendingFiles = [];
 let lastKnownPostCount = posts.length;
-let activeQuoteId = null;
+
+const MOON_ICON = `<svg viewBox="0 0 24 24" class="header-icon"><path d="M12.1 22c-5.5 0-10-4.5-10-10 0-4.8 3.4-8.9 8-9.8.4-.1.8.1 1 .5.2.4.1.8-.2 1.1-1.8 1.7-2.8 4-2.8 6.5 0 4.9 4 8.9 8.9 8.9 1 0 2-.2 2.9-.5.4-.1.8 0 1 .3.2.3.2.7 0 1-1.8 2.4-4.7 3.9-7.8 3.9z"/></svg>`;
+const SUN_ICON = `<svg viewBox="0 0 24 24" class="header-icon"><path d="M12 4a1 1 0 0 1-1-1V1a1 1 0 0 1 2 0v2a1 1 0 0 1-1 1zm0 19a1 1 0 0 1-1-1v-2a1 1 0 0 1 2 0v2a1 1 0 0 1-1 1zm9-11a1 1 0 0 1 1-1h2a1 1 0 0 1 0 2h-2a1 1 0 0 1-1-1zM1 12a1 1 0 0 1 1-1h2a1 1 0 0 1 0 2H2a1 1 0 0 1-1-1zm17.66-6.66a1 1 0 0 1 0-1.41l1.41-1.42a1 1 0 1 1 1.42 1.42l-1.42 1.41a1 1 0 0 1-1.41 0zM3.51 20.49a1 1 0 0 1 0-1.41l1.42-1.42a1 1 0 0 1 1.41 1.42l-1.41 1.41a1 1 0 0 1-1.42 0zm15.56 0a1 1 0 0 1-1.42 0l-1.41-1.41a1 1 0 0 1 1.41-1.42l1.42 1.42a1 1 0 0 1 0 1.41zM4.93 5.93a1 1 0 0 1-1.42 0L2.1 4.51a1 1 0 1 1 1.41-1.42l1.42 1.42a1 1 0 0 1 0 1.41zM12 6a6 6 0 1 1 0 12 6 6 0 0 1 0-12z"/></svg>`;
 
 // ========== Переводы ==========
 const translations = {
@@ -41,7 +43,8 @@ const translations = {
         },
         profile: { posts: 'Записи автора:', empty: 'Пока пусто...', noPosts: 'Пока нет ни одного поста', hint: 'Нажимай ✚ чтобы добавить первую запись!' },
         search: { placeholder: 'Начни вводить запрос...', notFound: '😕 Ничего не найдено', found: 'Найдено' },
-        toast: { nick: 'Укажи ник', empty: 'Напиши текст, загрузи медиа или процитируй кого-то', link: '🔗 Ссылка скопирована', lang: 'Язык изменён на Русский', memory: '⚠️ Память браузера переполнена!' }
+        feed: { end: '— конец каталога —' },
+        toast: { nick: 'Укажи ник', empty: 'Напиши текст, загрузи медиа или процитируй кого-то', link: '🔗 Ссылка скопирована', lang: 'Язык изменён на Русский', memory: '⚠️ Память браузера переполнена!', emptyCatalog: 'Каталог пуст — сначала опубликуй что-нибудь' }
     },
     en: {
         tabs: {
@@ -77,7 +80,8 @@ const translations = {
         },
         profile: { posts: 'Author posts:', empty: 'Empty...', noPosts: 'No posts yet', hint: 'Press ✚ to add first post!' },
         search: { placeholder: 'Start typing...', notFound: '😕 Nothing found', found: 'Found' },
-        toast: { nick: 'Enter nickname', empty: 'Write text, upload media or quote someone', link: '🔗 Link copied', lang: 'Language changed to English', memory: '⚠️ Browser storage full!' }
+        feed: { end: '— end of catalog —' },
+        toast: { nick: 'Enter nickname', empty: 'Write text, upload media or quote someone', link: '🔗 Link copied', lang: 'Language changed to English', memory: '⚠️ Browser storage full!', emptyCatalog: 'Catalog is empty — publish something first' }
     }
 };
 
@@ -101,7 +105,7 @@ function updateAllTexts() {
     });
 
     const writeBtn = document.querySelector('.primary-btn');
-    if (writeBtn) writeBtn.textContent = t('header.write');
+    if (writeBtn && !document.getElementById('newPostModal').classList.contains('open')) writeBtn.textContent = t('header.write');
 
     const authorInput = document.getElementById('newPostAuthor');
     const textInput = document.getElementById('newPostText');
@@ -145,26 +149,35 @@ const themeToggle = document.getElementById('themeToggle');
 function initTheme() {
     if (localStorage.getItem('archive-theme') === 'light') {
         document.body.classList.add('light');
-        themeToggle.textContent = '☀️';
+        themeToggle.innerHTML = SUN_ICON;
+    } else {
+        themeToggle.innerHTML = MOON_ICON;
     }
     currentLang = localStorage.getItem('archive-lang') || 'ru';
-    const flag = currentLang === 'ru' ? '🇷🇺' : '🇺🇸';
-    document.getElementById('currentFlag').textContent = flag;
-    document.querySelectorAll('.lang-option').forEach(opt => {
-        opt.classList.remove('active');
-        if (opt.querySelector('span').textContent === flag) {
-            opt.classList.add('active');
-        }
-    });
+    updateLangButton();
     updateAllTexts();
 }
 
 themeToggle.addEventListener('click', () => {
     document.body.classList.toggle('light');
     const isLight = document.body.classList.contains('light');
-    themeToggle.textContent = isLight ? '☀️' : '🌙';
+    themeToggle.innerHTML = isLight ? SUN_ICON : MOON_ICON;
     localStorage.setItem('archive-theme', isLight ? 'light' : 'dark');
 });
+
+// ========== Язык (простой переключатель в хедере, без плавающего меню) ==========
+function updateLangButton() {
+    const btn = document.getElementById('langToggleBtn');
+    if (btn) btn.textContent = currentLang.toUpperCase();
+}
+
+function toggleLanguage() {
+    currentLang = currentLang === 'ru' ? 'en' : 'ru';
+    localStorage.setItem('archive-lang', currentLang);
+    updateLangButton();
+    updateAllTexts();
+    showToast(currentLang === 'ru' ? 'Язык изменён на Русский' : 'Language changed to English');
+}
 
 document.querySelectorAll('.tab').forEach(tab => {
     tab.addEventListener('click', () => {
@@ -281,6 +294,10 @@ function renderFeed() {
         el.style.animationDelay = (Math.min(i, 8) * 45) + 'ms';
         feed.appendChild(el);
     });
+    const endMarker = document.createElement('div');
+    endMarker.className = 'feed-end';
+    endMarker.textContent = t('feed.end');
+    feed.appendChild(endMarker);
     document.querySelectorAll('.gallery-slides').forEach(initGallery);
     updateNewBadge();
 }
@@ -322,7 +339,7 @@ function createPostElement(post) {
         }
     }
 
-    const tagsHTML = post.tags.map(t => `<span class="tag" onclick="searchTag('${t.replace(/'/g, "\\'")}')">${escapeHtml(t)}</span>`).join('');
+    const tagsHTML = post.tags.map(tg => `<span class="tag" onclick="searchTag('${tg.replace(/'/g, "\\'")}')">${escapeHtml(tg)}</span>`).join('');
     const commentsHTML = (post.comments || []).map((c) => `
         <div class="comment">
             <strong>${escapeHtml(c.author)}</strong> ${escapeHtml(c.text)}
@@ -416,10 +433,15 @@ function navigateToPost(postId) {
     }
 }
 
+function jumpToRandomPost() {
+    if (!posts.length) { showToast(t('toast.emptyCatalog')); return; }
+    const randomPost = posts[Math.floor(Math.random() * posts.length)];
+    navigateToPost(randomPost.id);
+}
+
 function quotePost(postId) {
     const post = posts.find(p => p.id === postId);
     if (!post) return;
-    activeQuoteId = postId;
     openNewPost();
     const previewArea = document.getElementById('quotedPreviewArea');
     const previewContent = document.getElementById('quotedPreviewContent');
@@ -432,7 +454,6 @@ function quotePost(postId) {
 }
 
 function removeQuoteFromNewPost() {
-    activeQuoteId = null;
     const previewArea = document.getElementById('quotedPreviewArea');
     const quotedIdInput = document.getElementById('quotedPostIdInput');
     if (previewArea) previewArea.classList.remove('show');
@@ -588,7 +609,7 @@ function publishPost() {
     if (!text && pendingFiles.length === 0 && !quotedId) { showToast(t('toast.empty')); return; }
 
     const media = pendingFiles.map(f => f.data);
-    const tags = tagsRaw ? tagsRaw.split(/\s+/).filter(t => t).map(t => t.replace(/^#/, '')) : [];
+    const tags = tagsRaw ? tagsRaw.split(/\s+/).filter(tg => tg).map(tg => tg.replace(/^#/, '')) : [];
 
     if (editId) {
         const post = posts.find(p => p.id === parseInt(editId));
@@ -613,13 +634,13 @@ function doSearch() {
     const query = document.getElementById('searchInput').value.toLowerCase().trim();
     const results = document.getElementById('searchResults');
     if (!query) { results.innerHTML = t('search.placeholder'); return; }
-    const found = posts.filter(p => p.text.toLowerCase().includes(query) || p.author.toLowerCase().includes(query) || p.tags.some(t => t.toLowerCase().includes(query)));
+    const found = posts.filter(p => p.text.toLowerCase().includes(query) || p.author.toLowerCase().includes(query) || p.tags.some(tg => tg.toLowerCase().includes(query)));
     if (!found.length) { results.innerHTML = t('search.notFound'); return; }
     results.innerHTML = `<p style="color:var(--text2);margin-bottom:10px;font-family:var(--font-mono);font-size:12px;">${t('search.found')}: ${found.length}</p>` + found.map(p => `
         <div class="search-result" onclick="closeSearch(); navigateToPost(${p.id})">
             <div class="author">👤 ${escapeHtml(p.author)}</div>
             <div class="text">${escapeHtml(p.text.substring(0, 100))}${p.text.length > 100 ? '...' : ''}</div>
-            <div class="tags">${p.tags.map(t => '#' + t).join(' ')}</div>
+            <div class="tags">${p.tags.map(tg => '#' + tg).join(' ')}</div>
         </div>`).join('');
 }
 
@@ -700,32 +721,19 @@ function updateNewBadge() {
     }
 }
 
-function toggleLangMenu() {
-    const menu = document.getElementById('langMenu');
-    menu.classList.toggle('open');
-}
-
-document.addEventListener('click', function(e) {
-    const selector = document.getElementById('langSelector');
-    if (!selector.contains(e.target)) {
-        document.getElementById('langMenu').classList.remove('open');
+// ========== Горячие клавиши ==========
+document.addEventListener('keydown', (e) => {
+    const typing = ['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName);
+    if (e.key === '/' && !typing) {
+        e.preventDefault();
+        openSearch();
+    }
+    if (e.key === 'Escape') {
+        closeSearch();
+        closeProfile();
+        closeNewPost();
     }
 });
-
-function setLanguage(lang, flag) {
-    document.getElementById('currentFlag').textContent = flag;
-    document.getElementById('langMenu').classList.remove('open');
-    document.querySelectorAll('.lang-option').forEach(opt => {
-        opt.classList.remove('active');
-        if (opt.querySelector('span').textContent === flag) {
-            opt.classList.add('active');
-        }
-    });
-    currentLang = lang;
-    localStorage.setItem('archive-lang', lang);
-    updateAllTexts();
-    showToast(lang === 'ru' ? 'Язык изменён на Русский' : 'Language changed to English');
-}
 
 initTheme();
 renderFeed();
