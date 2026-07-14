@@ -203,6 +203,47 @@ function createPostElement(post) {
     const avatarLetter = getAvatar(post.author);
     const avatarColor = getAvatarColor(post.author);
 
+    // Автоматический расчет количества цитирований этого поста
+    const quotesCount = posts.filter(p => p.quotedPostId === post.id).length;
+
+    // Векторное сердце в зависимости от состояния "лайкнуто"
+    const heartIcon = post.liked 
+        ? `<svg viewBox="0 0 24 24" class="action-icon"><g><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"></path></g></svg>`
+        : `<svg viewBox="0 0 24 24" class="action-icon"><g><path d="M16.697 5.5c-1.222-.06-2.679.69-3.894 2.04L12 8.4l-.803-.86C9.982 6.19 8.525 5.44 7.303 5.5 5.14 5.6 3 7.53 3 11c0 3.82 4.29 8.27 8.53 11.53.27.21.67.21.94 0C16.71 19.27 21 14.82 21 11c0-3.47-2.14-5.4-4.303-5.5zM12 20.17C8.19 17.17 5 13.25 5 11c0-2.13 1.15-3.5 2.53-3.56.65-.03 1.57.41 2.53 1.49l1.94 2.1 1.94-2.1c.96-1.08 1.88-1.52 2.53-1.49C17.85 7.5 19 8.87 19 11c0 2.25-3.19 6.17-7 9.17z"></path></g></svg>`;
+
+    // Новая панель действий а-ля Twitter (X)
+    const actionsHTML = `
+        <div class="post-actions">
+            <button class="action-btn btn-comment" onclick="toggleComments(${post.id})" title="Комментарии">
+                <svg viewBox="0 0 24 24" class="action-icon"><g><path d="M1.751 10c0-4.42 3.584-8 8.005-8h4.49c4.419 0 8.005 3.58 8.005 8 0 4.42-3.586 8-8.005 8h-2.296l-3.903 3.756c-.43.413-1.125.386-1.52-.062-.157-.179-.245-.412-.245-.654v-3.04c-4.421 0-8.005-3.58-8.005-8zm8.005-6c-3.317 0-6.005 2.69-6.005 6 0 3.31 2.688 6 6.005 6h.997c.552 0 1 .45 1 1v1.817l2.818-2.71c.187-.18.437-.28.697-.28h2.983c3.317 0 6.005-2.69 6.005-6s-2.688-6-6.005-6h-4.49z"></path></g></svg>
+                <span>${(post.comments || []).length}</span>
+            </button>
+            <button class="action-btn btn-quote" onclick="quotePost(${post.id})" title="Цитата">
+                <svg viewBox="0 0 24 24" class="action-icon"><g><path d="M4.5 3.88l4.432 4.14-1.364 1.46L5.5 7.55V16c0 1.1.896 2 2 2H13v2H7.5c-2.209 0-4-1.79-4-4V7.55L1.432 9.48.068 8.02 4.5 3.88zM16.5 6H11V4h5.5c2.209 0 4 1.79 4 4v8.45l2.068-1.93 1.364 1.46-4.432 4.14-4.432-4.14 1.364-1.46 2.068 1.93V8c0-1.1-.896-2-2-2z"></path></g></svg>
+                <span>${quotesCount}</span>
+            </button>
+            <button class="action-btn btn-like ${post.liked ? 'liked' : ''}" onclick="toggleLike(${post.id})" title="Нравится">
+                <span class="reaction-glyph">${heartIcon}</span>
+                <span>${post.likes}</span>
+            </button>
+            <span class="action-btn btn-views" title="Просмотры">
+                <svg viewBox="0 0 24 24" class="action-icon"><g><path d="M8.75 21V3h2v18h-2zM3.5 21V11h2v10h-2zM19.25 21V7h2v14h-2zM14 21V10h2v11h-2z"></path></g></svg>
+                <span>${post.views || 0}</span>
+            </span>
+            <button class="action-btn btn-share" onclick="sharePost(${post.id})" title="Поделиться">
+                <svg viewBox="0 0 24 24" class="action-icon"><g><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92c0-1.61-1.31-2.92-2.92-2.92zM18 4c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zM6 13c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm12 5.92c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z"></path></g></svg>
+            </button>
+            ${isMyPost ? `
+            <button class="action-btn btn-edit" onclick="editPost(${post.id})" title="Редактировать">
+                <svg viewBox="0 0 24 24" class="action-icon"><g><path d="M14.06 9l.94.94L5.92 19H5v-.92L14.06 9zm3.6-3.6c-.2-.2-.51-.2-.71 0l-1.68 1.68 3.09 3.09 1.68-1.68c.2-.2.2-.51 0-.71L17.66 5.4zM3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"></path></g></svg>
+            </button>
+            <button class="action-btn btn-delete" onclick="deletePost(${post.id})" title="Удалить">
+                <svg viewBox="0 0 24 24" class="action-icon"><g><path d="M16 9v10H8V9h8m-1.5-6h-5l-1 1H5v2h14V4h-3.5l-1-1zM18 7H6v12c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7z"></path></g></svg>
+            </button>
+            ` : ''}
+        </div>
+    `;
+
     div.innerHTML = `
         ${post.pinned ? '<div class="pin-badge">📌 Закреп.</div>' : `<div class="catalog-no">${catalogNumber(post.id)}</div>`}
         <div class="post-header">
@@ -216,17 +257,7 @@ function createPostElement(post) {
         <div class="post-text">${escapeHtml(post.text)}</div>
         ${quotedHTML}
         <div class="post-tags">${tagsHTML}</div>
-        <div class="post-actions">
-            <button class="action-btn ${post.liked ? 'liked' : ''}" onclick="toggleLike(${post.id})">
-                <span class="reaction-glyph">👍</span> <span>${post.likes}</span>
-            </button>
-            <button class="action-btn" onclick="toggleComments(${post.id})">💬 ${(post.comments || []).length}</button>
-            <span class="action-btn">👁 ${post.views || 0}</span>
-            <button class="action-btn" onclick="quotePost(${post.id})">🔁</button>
-            <button class="action-btn" onclick="sharePost(${post.id})">🔗</button>
-            ${isMyPost ? `<button class="action-btn" onclick="editPost(${post.id})">✏️</button>` : ''}
-            ${isMyPost ? `<button class="action-btn delete-btn" onclick="deletePost(${post.id})">🗑</button>` : ''}
-        </div>
+        ${actionsHTML}
         <div class="comments-section" id="comments-${post.id}" style="display:none;">
             <div class="comments-list" id="comments-list-${post.id}">${commentsHTML || '<div style="color:var(--text3);font-size:13px;">Пока нет комментариев</div>'}</div>
             <div class="comment-input-row">
@@ -317,8 +348,8 @@ function addComment(postId) {
                 <span style="color:var(--text3);font-size:11px;margin-left:8px;">${timeAgo(c.timestamp)}</span>
             </div>`;
     }
-    const countBtn = document.querySelector(`#post-${postId} .action-btn:nth-child(2)`);
-    if (countBtn) countBtn.innerHTML = `💬 ${post.comments.length}`;
+    const countBtn = document.querySelector(`#post-${postId} .btn-comment`);
+    if (countBtn) countBtn.querySelector('span').textContent = post.comments.length;
     updateNewBadge();
 }
 
@@ -343,10 +374,16 @@ function toggleLike(postId) {
     post.liked = !post.liked;
     post.likes += post.liked ? 1 : -1;
     savePosts();
-    const btn = document.querySelector(`#post-${postId} .action-btn:first-child`);
+    const btn = document.querySelector(`#post-${postId} .btn-like`);
     if (btn) {
         btn.classList.toggle('liked', post.liked);
         btn.querySelector('span').textContent = post.likes;
+        const glyph = btn.querySelector('.reaction-glyph');
+        if (glyph) {
+            glyph.innerHTML = post.liked 
+                ? `<svg viewBox="0 0 24 24" class="action-icon"><g><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"></path></g></svg>`
+                : `<svg viewBox="0 0 24 24" class="action-icon"><g><path d="M16.697 5.5c-1.222-.06-2.679.69-3.894 2.04L12 8.4l-.803-.86C9.982 6.19 8.525 5.44 7.303 5.5 5.14 5.6 3 7.5 3 11c0 3.82 4.29 8.27 8.53 11.53.27.21.67.21.94 0C16.71 19.27 21 14.82 21 11c0-3.47-2.14-5.4-4.303-5.5zM12 20.17C8.19 17.17 5 13.25 5 11c0-2.13 1.15-3.5 2.53-3.56.65-.03 1.57.41 2.53 1.49l1.94 2.1 1.94-2.1c.96-1.08 1.88-1.52 2.53-1.49C17.85 7.5 19 8.87 19 11c0 2.25-3.19 6.17-7 9.17z"></path></g></svg>`;
+        }
     }
 }
 
@@ -382,7 +419,7 @@ function deletePost(postId) {
 function editPost(postId) {
     const post = posts.find(p => p.id === postId);
     if (!post) return;
-    document.getElementById('modalTitle').textContent = '✏️ Редактировать пост';
+    document.getElementById('modalTitle').textContent = '✏️ Редактировать post';
     document.getElementById('editPostId').value = postId;
     document.getElementById('newPostAuthor').value = post.author;
     document.getElementById('newPostText').value = post.text;
@@ -541,6 +578,20 @@ function updateNewBadge() {
             newTab.appendChild(badge);
         }
     }
+}
+
+// Переключение языков
+function setLanguage(lang) {
+    document.querySelectorAll('.lang-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    const items = document.querySelectorAll('.lang-item');
+    items.forEach(item => {
+        if (item.textContent.trim().includes(lang.toUpperCase())) {
+            item.classList.add('active');
+        }
+    });
+    showToast(lang === 'ru' ? '🇷🇺 Язык изменен на Русский' : '🇺🇸 Language changed to English');
 }
 
 initTheme();
