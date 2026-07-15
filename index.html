@@ -94,6 +94,11 @@
                 <input type="text" id="searchInput" placeholder="Поиск по тексту, автору или #тегу..." oninput="doSearch()">
                 <button class="close-search-btn" onclick="closeSearch()">✕</button>
             </div>
+            <div class="search-date-row">
+                <input type="date" id="searchDateFrom" class="date-input" onchange="doSearch()">
+                <span class="date-separator">—</span>
+                <input type="date" id="searchDateTo" class="date-input" onchange="doSearch()">
+            </div>
             <div class="search-results" id="searchResults">Начни вводить запрос...</div>
         </div>
     </div>
@@ -102,6 +107,7 @@
         <div class="modal profile-modal">
             <button class="close-profile-btn" onclick="closeProfile()">✕</button>
             <div id="profileHeader" class="profile-header-block"></div>
+            <div id="profileStats" class="profile-stats"></div>
             <hr class="divider">
             <h3>Записи автора:</h3>
             <div id="profilePosts" class="profile-posts-list"></div>
