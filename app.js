@@ -3,6 +3,7 @@ let currentTab = 'popular';
 let nextId = posts.length > 0 ? Math.max(...posts.map(p => p.id)) + 1 : 1;
 let pendingFiles = [];
 let lastKnownPostCount = posts.length;
+let searchSortMode = 'date-desc';
 
 const MOON_ICON = `<svg viewBox="0 0 24 24" class="header-icon"><path d="M12.1 22c-5.5 0-10-4.5-10-10 0-4.8 3.4-8.9 8-9.8.4-.1.8.1 1 .5.2.4.1.8-.2 1.1-1.8 1.7-2.8 4-2.8 6.5 0 4.9 4 8.9 8.9 8.9 1 0 2-.2 2.9-.5.4-.1.8 0 1 .3.2.3.2.7 0 1-1.8 2.4-4.7 3.9-7.8 3.9z"/></svg>`;
 const SUN_ICON = `<svg viewBox="0 0 24 24" class="header-icon"><path d="M12 4a1 1 0 0 1-1-1V1a1 1 0 0 1 2 0v2a1 1 0 0 1-1 1zm0 19a1 1 0 0 1-1-1v-2a1 1 0 0 1 2 0v2a1 1 0 0 1-1 1zm9-11a1 1 0 0 1 1-1h2a1 1 0 0 1 0 2h-2a1 1 0 0 1-1-1zM1 12a1 1 0 0 1 1-1h2a1 1 0 0 1 0 2H2a1 1 0 0 1-1-1zm17.66-6.66a1 1 0 0 1 0-1.41l1.41-1.42a1 1 0 1 1 1.42 1.42l-1.42 1.41a1 1 0 0 1-1.41 0zM3.51 20.49a1 1 0 0 1 0-1.41l1.42-1.42a1 1 0 0 1 1.41 1.42l-1.41 1.41a1 1 0 0 1-1.42 0zm15.56 0a1 1 0 0 1-1.42 0l-1.41-1.41a1 1 0 0 1 1.41-1.42l1.42 1.42a1 1 0 0 1 0 1.41zM4.93 5.93a1 1 0 0 1-1.42 0L2.1 4.51a1 1 0 1 1 1.41-1.42l1.42 1.42a1 1 0 0 1 0 1.41zM12 6a6 6 0 1 1 0 12 6 6 0 0 1 0-12z"/></svg>`;
@@ -165,7 +166,6 @@ themeToggle.addEventListener('click', () => {
     localStorage.setItem('archive-theme', isLight ? 'light' : 'dark');
 });
 
-// ========== Язык (простой переключатель в хедере, без плавающего меню) ==========
 function updateLangButton() {
     const btn = document.getElementById('langToggleBtn');
     if (btn) btn.textContent = currentLang.toUpperCase();
@@ -387,6 +387,7 @@ function createPostElement(post) {
         </div>`;
 
     div.innerHTML = `
+        ${!post._viewed ? '<div class="unread-dot" title="Новое"></div>' : ''}
         ${post.pinned ? `<div class="pin-badge">${t('post.pinned')}</div>` : `<div class="catalog-no">${catalogNumber(post.id)}</div>`}
         <div class="post-header">
             <div class="post-avatar" style="background:${avatarColor};">${avatarLetter}</div>
@@ -426,10 +427,10 @@ function navigateToPost(postId) {
     }
     if (el) {
         el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        el.style.borderColor = 'var(--accent)';
+        el.classList.add('reveal-flash');
         setTimeout(() => {
-            el.style.borderColor = targetPost.pinned ? 'var(--accent-dim)' : 'var(--border-soft)';
-        }, 2000);
+            el.classList.remove('reveal-flash');
+        }, 1500);
     }
 }
 
@@ -632,19 +633,76 @@ function closeSearch() { document.getElementById('searchModal').classList.remove
 
 function doSearch() {
     const query = document.getElementById('searchInput').value.toLowerCase().trim();
+    const dateFrom = document.getElementById('searchDateFrom')?.value;
+    const dateTo = document.getElementById('searchDateTo')?.value;
     const results = document.getElementById('searchResults');
-    if (!query) { results.innerHTML = t('search.placeholder'); return; }
-    const found = posts.filter(p => p.text.toLowerCase().includes(query) || p.author.toLowerCase().includes(query) || p.tags.some(tg => tg.toLowerCase().includes(query)));
+
+    if (!query && !dateFrom && !dateTo) { 
+        results.innerHTML = t('search.placeholder'); 
+        return; 
+    }
+
+    let found = [...posts];
+
+    if (query) {
+        found = found.filter(p => 
+            p.text.toLowerCase().includes(query) || 
+            p.author.toLowerCase().includes(query) || 
+            p.tags.some(tg => tg.toLowerCase().includes(query))
+        );
+    }
+
+    if (dateFrom) {
+        const fromTs = new Date(dateFrom).getTime();
+        found = found.filter(p => p.timestamp >= fromTs);
+    }
+
+    if (dateTo) {
+        const toTs = new Date(dateTo + 'T23:59:59').getTime();
+        found = found.filter(p => p.timestamp <= toTs);
+    }
+
+    if (searchSortMode === 'date-desc') {
+        found.sort((a, b) => b.timestamp - a.timestamp);
+    } else if (searchSortMode === 'date-asc') {
+        found.sort((a, b) => a.timestamp - b.timestamp);
+    } else if (searchSortMode === 'popular') {
+        found.sort((a, b) => b.likes - a.likes);
+    }
+
     if (!found.length) { results.innerHTML = t('search.notFound'); return; }
-    results.innerHTML = `<p style="color:var(--text2);margin-bottom:10px;font-family:var(--font-mono);font-size:12px;">${t('search.found')}: ${found.length}</p>` + found.map(p => `
-        <div class="search-result" onclick="closeSearch(); navigateToPost(${p.id})">
-            <div class="author">👤 ${escapeHtml(p.author)}</div>
-            <div class="text">${escapeHtml(p.text.substring(0, 100))}${p.text.length > 100 ? '...' : ''}</div>
-            <div class="tags">${p.tags.map(tg => '#' + tg).join(' ')}</div>
-        </div>`).join('');
+
+    results.innerHTML = `
+        <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+            <button class="sort-btn ${searchSortMode === 'date-desc' ? 'active' : ''}" 
+                onclick="event.stopPropagation(); searchSortMode='date-desc'; doSearch();">
+                ↓ Новые
+            </button>
+            <button class="sort-btn ${searchSortMode === 'date-asc' ? 'active' : ''}" 
+                onclick="event.stopPropagation(); searchSortMode='date-asc'; doSearch();">
+                ↑ Старые
+            </button>
+            <button class="sort-btn ${searchSortMode === 'popular' ? 'active' : ''}" 
+                onclick="event.stopPropagation(); searchSortMode='popular'; doSearch();">
+                🔥 Популярные
+            </button>
+        </div>
+        <p style="color:var(--text2);margin-bottom:10px;font-family:var(--font-mono);font-size:12px;">${t('search.found')}: ${found.length}</p>
+        ${found.map(p => `
+            <div class="search-result" onclick="closeSearch(); navigateToPost(${p.id})">
+                <div class="author">👤 ${escapeHtml(p.author)}</div>
+                <div class="text">${escapeHtml(p.text.substring(0, 100))}${p.text.length > 100 ? '...' : ''}</div>
+                <div class="tags">${p.tags.map(tg => '#' + tg).join(' ')}</div>
+            </div>`).join('')}
+    `;
 }
 
-function searchTag(tag) { openSearch(); document.getElementById('searchInput').value = tag; doSearch(); }
+function searchTag(tag) { 
+    openSearch(); 
+    document.getElementById('searchInput').value = tag;
+    searchSortMode = 'date-desc';
+    doSearch(); 
+}
 
 function openProfile(author) {
     const modal = document.getElementById('profileModal');
@@ -658,6 +716,27 @@ function openProfile(author) {
             <h2>👤 ${escapeHtml(author)}</h2>
             <p>📝 ${t('profile.posts')}: ${userPosts.length} | ❤️ ${totalLikes}</p>
         </div>`;
+
+    const months = {};
+    userPosts.forEach(p => {
+        const month = new Date(p.timestamp).toLocaleString('ru-RU', { month: 'short', year: 'numeric' });
+        months[month] = (months[month] || 0) + 1;
+    });
+
+    const maxCount = Math.max(...Object.values(months), 1);
+    const chartHTML = Object.entries(months).slice(-12).map(([month, count]) => {
+        const height = Math.max((count / maxCount) * 40, 4);
+        return `<div class="chart-bar" style="height:${height}px;" title="${month}: ${count}">
+            <span class="chart-label">${month}</span>
+        </div>`;
+    }).join('');
+
+    document.getElementById('profileStats').innerHTML = userPosts.length > 0 ? `
+        <div class="profile-chart">
+            <div class="chart-bars">${chartHTML}</div>
+        </div>
+    ` : '';
+
     document.getElementById('profilePosts').innerHTML = userPosts.length === 0
         ? `<p style="color:var(--text2);text-align:center;padding:20px;">${t('profile.empty')}</p>`
         : userPosts.map(p => `
