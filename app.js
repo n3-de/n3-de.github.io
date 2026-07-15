@@ -11,12 +11,7 @@ const SUN_ICON = `<svg viewBox="0 0 24 24" class="header-icon"><path d="M12 4a1 
 // ========== Переводы ==========
 const translations = {
     ru: {
-        tabs: {
-            popular: 'ПОПУЛЯРНОЕ',
-            new: 'НОВОЕ',
-            date: 'ХРОНОЛОГИЯ',
-            my: 'МОИ ПОСТЫ'
-        },
+        tabs: { popular: 'ПОПУЛЯРНОЕ', new: 'НОВОЕ', date: 'ХРОНОЛОГИЯ', my: 'МОИ ПОСТЫ' },
         header: { write: '✚ Написать', search: 'Поиск', theme: 'Сменить тему' },
         post: {
             pinned: '📌 Закреп.',
@@ -39,21 +34,17 @@ const translations = {
                 nick: 'Придумай себе ник',
                 text: 'Поделись мыслями...',
                 tags: '#Ваши теги',
-                search: 'Поиск по тексту, автору или #тегу...'
+                search: 'Поиск...',
+                headerSearch: 'Поиск...'
             }
         },
-        profile: { posts: 'Записи автора:', empty: 'Пока пусто...', noPosts: 'Пока нет ни одного поста', hint: 'Нажимай ✚ чтобы добавить первую запись!' },
+        profile: { posts: 'Записи автора:', empty: 'Пока пусто...', noPosts: 'Пока нет ни одного поста', hint: 'Нажми ✚ чтобы создать первый пост' },
         search: { placeholder: 'Начни вводить запрос...', notFound: '😕 Ничего не найдено', found: 'Найдено' },
         feed: { end: '— конец каталога —' },
         toast: { nick: 'Укажи ник', empty: 'Напиши текст, загрузи медиа или процитируй кого-то', link: '🔗 Ссылка скопирована', lang: 'Язык изменён на Русский', memory: '⚠️ Память браузера переполнена!', emptyCatalog: 'Каталог пуст — сначала опубликуй что-нибудь' }
     },
     en: {
-        tabs: {
-            popular: 'POPULAR',
-            new: 'NEW',
-            date: 'CHRONOLOGY',
-            my: 'MY POSTS'
-        },
+        tabs: { popular: 'POPULAR', new: 'NEW', date: 'CHRONOLOGY', my: 'MY POSTS' },
         header: { write: '✚ Write', search: 'Search', theme: 'Toggle theme' },
         post: {
             pinned: '📌 Pinned',
@@ -76,10 +67,11 @@ const translations = {
                 nick: 'Choose a nickname',
                 text: 'Share your thoughts...',
                 tags: '#Your tags',
-                search: 'Search by text, author or #tag...'
+                search: 'Search...',
+                headerSearch: 'Search...'
             }
         },
-        profile: { posts: 'Author posts:', empty: 'Empty...', noPosts: 'No posts yet', hint: 'Press ✚ to add first post!' },
+        profile: { posts: 'Author posts:', empty: 'Empty...', noPosts: 'No posts yet', hint: 'Tap ✚ to create your first post' },
         search: { placeholder: 'Start typing...', notFound: '😕 Nothing found', found: 'Found' },
         feed: { end: '— end of catalog —' },
         toast: { nick: 'Enter nickname', empty: 'Write text, upload media or quote someone', link: '🔗 Link copied', lang: 'Language changed to English', memory: '⚠️ Browser storage full!', emptyCatalog: 'Catalog is empty — publish something first' }
@@ -105,25 +97,15 @@ function updateAllTexts() {
         }
     });
 
-    const writeBtn = document.querySelector('.primary-btn');
-    if (writeBtn && !document.getElementById('newPostModal').classList.contains('open')) writeBtn.textContent = t('header.write');
-
     const authorInput = document.getElementById('newPostAuthor');
     const textInput = document.getElementById('newPostText');
     const tagsInput = document.getElementById('newPostTags');
-    const searchInput = document.getElementById('searchInput');
+    const headerSearchInput = document.getElementById('headerSearchInput');
 
     if (authorInput) authorInput.placeholder = t('post.placeholder.nick');
     if (textInput) textInput.placeholder = t('post.placeholder.text');
     if (tagsInput) tagsInput.placeholder = t('post.placeholder.tags');
-    if (searchInput) searchInput.placeholder = t('post.placeholder.search');
-
-    const searchResults = document.getElementById('searchResults');
-    if (searchResults) {
-        if (searchResults.textContent === 'Начни вводить запрос...' || searchResults.textContent === 'Start typing...') {
-            searchResults.textContent = t('search.placeholder');
-        }
-    }
+    if (headerSearchInput) headerSearchInput.placeholder = t('post.placeholder.headerSearch');
 
     const modalTitle = document.getElementById('modalTitle');
     const editId = document.getElementById('editPostId').value;
@@ -177,6 +159,64 @@ function toggleLanguage() {
     updateLangButton();
     updateAllTexts();
     showToast(currentLang === 'ru' ? 'Язык изменён на Русский' : 'Language changed to English');
+}
+
+// ========== Поиск в хедере ==========
+function openHeaderSearch() {
+    const headerSearch = document.getElementById('headerSearch');
+    const headerControls = document.getElementById('headerControls');
+    const logo = document.querySelector('.logo');
+    
+    headerSearch.classList.add('open');
+    headerControls.style.display = 'none';
+    logo.style.display = 'none';
+    document.getElementById('headerSearchInput').focus();
+}
+
+function closeHeaderSearch() {
+    const headerSearch = document.getElementById('headerSearch');
+    const headerControls = document.getElementById('headerControls');
+    const logo = document.querySelector('.logo');
+    
+    headerSearch.classList.remove('open');
+    headerControls.style.display = '';
+    logo.style.display = '';
+    document.getElementById('headerSearchInput').value = '';
+    renderFeed();
+}
+
+function doHeaderSearch() {
+    const query = document.getElementById('headerSearchInput').value.toLowerCase().trim();
+    if (!query) { renderFeed(); return; }
+    
+    const found = posts.filter(p => 
+        p.text.toLowerCase().includes(query) || 
+        p.author.toLowerCase().includes(query) || 
+        p.tags.some(tg => tg.toLowerCase().includes(query))
+    );
+    
+    currentTab = 'new';
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    const newTab = document.querySelector('.tab[data-tab="new"]');
+    if (newTab) newTab.classList.add('active');
+    moveTabIndicator(newTab);
+    
+    const feed = document.getElementById('feed');
+    if (!found.length) {
+        feed.innerHTML = `<div class="empty-state"><div class="empty-icon"><svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div><p>${t('search.notFound')}</p></div>`;
+        return;
+    }
+    
+    feed.innerHTML = '';
+    found.forEach((post, i) => {
+        const el = createPostElement(post);
+        el.style.animationDelay = (Math.min(i, 8) * 45) + 'ms';
+        feed.appendChild(el);
+    });
+    const endMarker = document.createElement('div');
+    endMarker.className = 'feed-end';
+    endMarker.textContent = t('feed.end');
+    feed.appendChild(endMarker);
 }
 
 document.querySelectorAll('.tab').forEach(tab => {
@@ -282,7 +322,15 @@ function renderFeed() {
     if (filtered.length === 0) {
         feed.innerHTML = `
             <div class="empty-state">
-                <div class="emoji">📝</div>
+                <div class="empty-icon">
+                    <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                        <line x1="16" y1="13" x2="8" y2="13"/>
+                        <line x1="16" y1="17" x2="8" y2="17"/>
+                        <polyline points="10 9 9 9 8 9"/>
+                    </svg>
+                </div>
                 <p>${t('profile.noPosts')}</p>
                 <p class="hint">${t('profile.hint')}</p>
             </div>`;
@@ -628,80 +676,10 @@ function publishPost() {
     switchTab('new');
 }
 
-function openSearch() { document.getElementById('searchModal').classList.add('open'); document.getElementById('searchInput').focus(); }
-function closeSearch() { document.getElementById('searchModal').classList.remove('open'); }
-
-function doSearch() {
-    const query = document.getElementById('searchInput').value.toLowerCase().trim();
-    const dateFrom = document.getElementById('searchDateFrom')?.value;
-    const dateTo = document.getElementById('searchDateTo')?.value;
-    const results = document.getElementById('searchResults');
-
-    if (!query && !dateFrom && !dateTo) { 
-        results.innerHTML = t('search.placeholder'); 
-        return; 
-    }
-
-    let found = [...posts];
-
-    if (query) {
-        found = found.filter(p => 
-            p.text.toLowerCase().includes(query) || 
-            p.author.toLowerCase().includes(query) || 
-            p.tags.some(tg => tg.toLowerCase().includes(query))
-        );
-    }
-
-    if (dateFrom) {
-        const fromTs = new Date(dateFrom).getTime();
-        found = found.filter(p => p.timestamp >= fromTs);
-    }
-
-    if (dateTo) {
-        const toTs = new Date(dateTo + 'T23:59:59').getTime();
-        found = found.filter(p => p.timestamp <= toTs);
-    }
-
-    if (searchSortMode === 'date-desc') {
-        found.sort((a, b) => b.timestamp - a.timestamp);
-    } else if (searchSortMode === 'date-asc') {
-        found.sort((a, b) => a.timestamp - b.timestamp);
-    } else if (searchSortMode === 'popular') {
-        found.sort((a, b) => b.likes - a.likes);
-    }
-
-    if (!found.length) { results.innerHTML = t('search.notFound'); return; }
-
-    results.innerHTML = `
-        <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
-            <button class="sort-btn ${searchSortMode === 'date-desc' ? 'active' : ''}" 
-                onclick="event.stopPropagation(); searchSortMode='date-desc'; doSearch();">
-                ↓ Новые
-            </button>
-            <button class="sort-btn ${searchSortMode === 'date-asc' ? 'active' : ''}" 
-                onclick="event.stopPropagation(); searchSortMode='date-asc'; doSearch();">
-                ↑ Старые
-            </button>
-            <button class="sort-btn ${searchSortMode === 'popular' ? 'active' : ''}" 
-                onclick="event.stopPropagation(); searchSortMode='popular'; doSearch();">
-                🔥 Популярные
-            </button>
-        </div>
-        <p style="color:var(--text2);margin-bottom:10px;font-family:var(--font-mono);font-size:12px;">${t('search.found')}: ${found.length}</p>
-        ${found.map(p => `
-            <div class="search-result" onclick="closeSearch(); navigateToPost(${p.id})">
-                <div class="author">👤 ${escapeHtml(p.author)}</div>
-                <div class="text">${escapeHtml(p.text.substring(0, 100))}${p.text.length > 100 ? '...' : ''}</div>
-                <div class="tags">${p.tags.map(tg => '#' + tg).join(' ')}</div>
-            </div>`).join('')}
-    `;
-}
-
 function searchTag(tag) { 
-    openSearch(); 
-    document.getElementById('searchInput').value = tag;
-    searchSortMode = 'date-desc';
-    doSearch(); 
+    openHeaderSearch();
+    document.getElementById('headerSearchInput').value = tag;
+    doHeaderSearch();
 }
 
 function openProfile(author) {
@@ -805,10 +783,10 @@ document.addEventListener('keydown', (e) => {
     const typing = ['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName);
     if (e.key === '/' && !typing) {
         e.preventDefault();
-        openSearch();
+        openHeaderSearch();
     }
     if (e.key === 'Escape') {
-        closeSearch();
+        closeHeaderSearch();
         closeProfile();
         closeNewPost();
     }
